@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Akun Saya — LPDP Prep</title>
+<link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+<header class="site-header">
+  <div class="container nav">
+    <a href="index.html" class="brand">
+      <span class="brand-mark">LP</span>
+      <span class="brand-text">LPDP Prep</span>
+    </a>
+    <nav class="nav-links" id="navLinks">
+      <a href="index.html">Beranda</a>
+      <a href="essay.html">Essay Checker</a>
+      <a href="tbs.html">TBS Practice</a>
+      <a href="interview.html">Interview</a>
+      <a href="history.html">Riwayat</a>
+      <a href="account.html" class="active">Akun</a>
+      <a href="login.html" class="btn btn-ghost" id="authLink">Masuk</a>
+    </nav>
+    <button class="nav-toggle" id="navToggle" aria-label="Toggle menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<section class="page-header">
+  <div class="container">
+    <span class="eyebrow">Akun</span>
+    <h1>Profil & Langganan</h1>
+  </div>
+</section>
+
+<section class="tool-layout">
+  <div class="container" style="max-width: 760px;">
+
+    <div id="loginPrompt" class="panel hidden" style="text-align:center; padding:48px;">
+      <h3>Masuk untuk Melihat Akun</h3>
+      <a href="login.html" class="btn btn-primary">Masuk</a>
+    </div>
+
+    <div id="accountView" class="hidden">
+      <div class="panel" style="margin-bottom:20px;">
+        <h3 style="margin-top:0">Profil</h3>
+        <div class="account-row">
+          <span class="muted">Nama</span>
+          <strong id="acctName">—</strong>
+        </div>
+        <div class="account-row">
+          <span class="muted">Email</span>
+          <strong id="acctEmail">—</strong>
+        </div>
+      </div>
+
+      <div class="panel" id="proPanel">
+        <h3 style="margin-top:0">Langganan</h3>
+        <div id="proStatus"></div>
+      </div>
+
+      <div style="margin-top:20px; display:flex; gap:12px;">
+        <button class="btn btn-ghost" id="logoutBtn">Keluar</button>
+      </div>
+
+      <div class="panel" style="margin-top:20px;">
+        <h3 style="margin-top:0">Riwayat Pembayaran</h3>
+        <div id="paymentsList"></div>
+      </div>
+    </div>
+
+    <div id="loadingState" class="panel" style="text-align:center; padding:48px;">
+      <p class="muted">Memuat...</p>
+    </div>
+
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="container copyright">© 2026 LPDP Prep.</div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="js/supabase-config.js"></script>
+<script src="js/supabase-client.js"></script>
+<script src="js/app.js"></script>
+<script src="js/account.js"></script>
+</body>
+</html>

@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Interview Practice — LPDP Prep</title>
+<link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+<header class="site-header">
+  <div class="container nav">
+    <a href="index.html" class="brand">
+      <span class="brand-mark">LP</span>
+      <span class="brand-text">LPDP Prep</span>
+    </a>
+    <nav class="nav-links" id="navLinks">
+      <a href="index.html">Beranda</a>
+      <a href="essay.html">Essay Checker</a>
+      <a href="tbs.html">TBS Practice</a>
+      <a href="interview.html" class="active">Interview</a>
+      <a href="history.html">Riwayat</a>
+      <a href="admin.html">Training Data</a>
+      <a href="pricing.html">Upgrade</a>
+      <a href="login.html" class="btn btn-ghost" id="authLink">Masuk</a>
+    </nav>
+    <button class="nav-toggle" id="navToggle" aria-label="Toggle menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<section class="page-header">
+  <div class="container">
+    <span class="eyebrow">Interview Practice</span>
+    <h1>Simulasi Wawancara LPDP</h1>
+    <p>Sistem akan membuat pertanyaan yang dipersonalisasi berdasarkan essay-mu. Jawab satu per satu, lalu dapatkan evaluasi lengkap.</p>
+  </div>
+</section>
+
+<section class="tool-layout">
+  <div class="container">
+
+    <!-- Essay input stage -->
+    <div id="essayStage" class="panel tbs-setup">
+      <h3>Langkah 1: Masukkan Essay-mu</h3>
+      <p class="muted">Essay akan digunakan untuk membuat pertanyaan wawancara yang relevan dengan rencana dan latar belakangmu.</p>
+      <div class="field">
+        <label for="essayInput">Essay LPDP</label>
+        <textarea id="essayInput" placeholder="Tempel essay-mu di sini..."></textarea>
+        <div class="help"><span id="wordCount">0</span> kata</div>
+      </div>
+      <div class="field">
+        <label for="interviewLength">Jumlah Pertanyaan</label>
+        <select id="interviewLength">
+          <option value="5">5 pertanyaan (ringkas)</option>
+          <option value="8" selected>8 pertanyaan (standar)</option>
+          <option value="12">12 pertanyaan (panjang)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="interviewLang">Bahasa Wawancara (pertanyaan &amp; transkripsi suara)</label>
+        <select id="interviewLang">
+          <option value="id-ID" selected>Bahasa Indonesia</option>
+          <option value="en-US">English</option>
+        </select>
+        <div class="help">Pilih English untuk latihan wawancara luar negeri / bilingual. Pertanyaan dan hasil evaluasi akan mengikuti bahasa yang dipilih.</div>
+      </div>
+      <div class="field">
+        <label for="perQuestionSec">Durasi per Pertanyaan</label>
+        <select id="perQuestionSec">
+          <option value="60">60 detik (cepat)</option>
+          <option value="90" selected>90 detik (standar)</option>
+          <option value="120">2 menit (santai)</option>
+          <option value="180">3 menit (mendalam)</option>
+        </select>
+        <div class="help">Timer berjalan otomatis. Saat waktu habis, pertanyaan berikutnya langsung keluar — seperti wawancara sungguhan.</div>
+      </div>
+
+      <div class="ai-card">
+        <div class="ai-card-header">
+          <label class="ai-toggle">
+            <input type="checkbox" id="aiEnable" />
+            <span>Gunakan AI untuk Membuat Pertanyaan</span>
+            <span class="ai-badge">AI</span>
+          </label>
+          <small class="muted" id="aiRefCount">— pertanyaan referensi</small>
+        </div>
+        <p class="muted" style="margin:8px 0 0; font-size:0.85rem;">AI akan membaca essay-mu dan membuat pertanyaan personal yang menggali kelemahan/celah — contoh: <em>"Mengapa kamu mau S2 padahal baru saja lulus?"</em>. Kamu juga bisa menambah <a href="admin.html">pertanyaan referensi</a> sebagai bahan input model.</p>
+
+        <div class="ai-fields hidden" id="aiFields">
+          <div class="field" style="margin:0;">
+            <label for="aiKey">Anthropic API Key <small class="muted">(disimpan lokal di browser, bukan di server)</small></label>
+            <input type="password" id="aiKey" placeholder="sk-ant-api03-..." autocomplete="off" />
+          </div>
+          <div class="form-row" style="margin:0;">
+            <div class="field" style="margin:0;">
+              <label for="aiModel">Model</label>
+              <select id="aiModel">
+                <option value="claude-sonnet-4-6" selected>Claude Sonnet 4.6 (cepat &amp; pintar)</option>
+                <option value="claude-opus-4-7">Claude Opus 4.7 (paling pintar)</option>
+                <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5 (paling cepat)</option>
+              </select>
+            </div>
+            <div class="field" style="margin:0;">
+              <label for="aiTemp">Kreativitas</label>
+              <select id="aiTemp">
+                <option value="0.3">Konsisten (0.3)</option>
+                <option value="0.7" selected>Seimbang (0.7)</option>
+                <option value="1.0">Kreatif (1.0)</option>
+              </select>
+            </div>
+          </div>
+          <div class="ai-status" id="aiStatus"></div>
+        </div>
+      </div>
+
+      <button class="btn btn-primary btn-block" id="startInterviewBtn">Lanjut ke Pengecekan Kamera →</button>
+    </div>
+
+    <!-- Media setup stage (camera + mic permission) -->
+    <div id="mediaStage" class="panel hidden tbs-setup">
+      <h3>Langkah 2: Cek Kamera &amp; Mikrofon</h3>
+      <p class="muted">Simulasi akan terasa seperti wawancara sungguhan. Kamera ditampilkan agar kamu terbiasa menghadap lensa — <strong>video tidak direkam</strong>. Suara jawabanmu direkam agar bisa diputar ulang dan otomatis ditranskrip.</p>
+
+      <div class="media-preview-wrap">
+        <video id="mediaPreview" autoplay muted playsinline></video>
+        <div class="media-preview-status" id="mediaStatus">Meminta izin kamera &amp; mikrofon...</div>
+      </div>
+
+      <div id="mediaError" class="hidden" style="margin-top:12px;"></div>
+
+      <div class="media-tips">
+        <div class="media-tip"><strong>Pencahayaan</strong><span>Hadap ke sumber cahaya, bukan membelakanginya.</span></div>
+        <div class="media-tip"><strong>Posisi Kamera</strong><span>Sejajar mata, jarak sekitar 40–60 cm.</span></div>
+        <div class="media-tip"><strong>Mikrofon</strong><span>Cari ruangan tenang agar suara jernih.</span></div>
+      </div>
+
+      <div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:20px;">
+        <button class="btn btn-primary" id="beginInterviewBtn" disabled>Mulai Wawancara →</button>
+        <button class="btn btn-ghost" id="skipMediaBtn">Lewati, jawab tulisan saja</button>
+        <button class="btn btn-ghost" id="retryMediaBtn">Coba Izinkan Lagi</button>
+      </div>
+    </div>
+
+    <!-- Interview stage -->
+    <div id="interviewStage" class="hidden">
+      <div class="quiz-header">
+        <div><strong>Simulasi Wawancara</strong> <span class="muted" id="iNumLabel"></span></div>
+        <div class="progress"><span id="iProgress"></span></div>
+        <div class="timer" id="iTimer">00:00</div>
+      </div>
+
+      <!-- Floating camera preview -->
+      <div id="cameraPip" class="camera-pip hidden">
+        <video id="cameraPipVideo" autoplay muted playsinline></video>
+        <div class="camera-pip-label">KAMU</div>
+        <div class="camera-pip-dot" id="cameraPipDot"></div>
+        <div class="camera-pip-paused" id="cameraPipPaused">DIJEDA</div>
+      </div>
+
+      <div class="panel">
+        <div class="q-num" id="iQnum"></div>
+        <div class="q-text" id="iQtext"></div>
+
+        <!-- Question countdown ring -->
+        <div class="q-countdown" id="qCountdown">
+          <div class="q-countdown-ring">
+            <svg viewBox="0 0 120 120" aria-hidden="true">
+              <circle cx="60" cy="60" r="52" class="q-ring-bg"></circle>
+              <circle cx="60" cy="60" r="52" class="q-ring-fg" id="qRingFg"></circle>
+            </svg>
+            <div class="q-countdown-value" id="qCountdownValue">90</div>
+            <div class="q-countdown-label">detik</div>
+          </div>
+          <div class="q-countdown-side">
+            <div class="rec-live" id="recLive">
+              <span class="rec-live-dot"></span>
+              <span id="recLiveLabel">Merekam jawabanmu...</span>
+            </div>
+            <div class="rec-meta" style="margin-top:8px;">
+              <span id="recStatus" class="rec-status">Menyiapkan...</span>
+              <span id="recTime" class="rec-time">00:00</span>
+            </div>
+            <div class="q-actions">
+              <button class="btn btn-ghost" id="iPauseBtn" type="button">⏸ Jeda</button>
+              <button class="btn btn-primary" id="iSkipBtn" type="button">Lewati Pertanyaan →</button>
+            </div>
+          </div>
+        </div>
+
+        <label for="iAnswer">Transkrip Jawabanmu <small class="muted" id="iAnswerHint">(terisi otomatis dari suara — kamu juga bisa mengetik/mengedit)</small></label>
+        <textarea id="iAnswer" placeholder="Jawabanmu akan muncul di sini saat kamu bicara. Kamu bisa juga mengetik langsung."></textarea>
+        <div class="help"><span id="iWords">0</span> kata • direkomendasikan 80–200 kata per jawaban</div>
+
+        <audio id="recPlayback" controls class="rec-playback hidden" style="margin-top:10px;"></audio>
+      </div>
+
+      <div class="panel" style="margin-top:16px;">
+        <h3>Transkrip</h3>
+        <div class="chat" id="chatView"></div>
+      </div>
+    </div>
+
+    <!-- Result stage -->
+    <div id="resultStage" class="hidden">
+      <div class="panel">
+        <div class="score-hero" id="iResultHero"></div>
+        <div class="metrics" id="iMetrics"></div>
+
+        <div class="analysis-block">
+          <h4><span class="tag tag-strong">Kekuatan</span></h4>
+          <ul id="iStrengths"></ul>
+        </div>
+        <div class="analysis-block">
+          <h4><span class="tag tag-weak">Area Perbaikan</span></h4>
+          <ul id="iWeaknesses"></ul>
+        </div>
+        <div class="analysis-block">
+          <h4><span class="tag tag-tip">Saran</span></h4>
+          <ul id="iSuggestions"></ul>
+        </div>
+
+        <div style="display:flex; gap:12px; margin-top:20px;">
+          <button class="btn btn-primary" id="iRetry">Ulang Wawancara</button>
+          <button class="btn btn-ghost" id="iDetails">Lihat Semua Jawaban</button>
+        </div>
+      </div>
+
+      <div class="panel hidden" id="iDetailsPanel" style="margin-top:16px;">
+        <h3>Review Tiap Pertanyaan</h3>
+        <div id="iReviewList"></div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="container copyright">© 2026 LPDP Prep. Dibuat untuk pejuang beasiswa Indonesia.</div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="js/supabase-config.js"></script>
+<script src="js/supabase-client.js"></script>
+<script src="js/app.js"></script>
+<script src="js/interview.js"></script>
+</body>
+</html>

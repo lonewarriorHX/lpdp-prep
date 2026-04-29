@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Essay Checker — LPDP Prep</title>
+<link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+<header class="site-header">
+  <div class="container nav">
+    <a href="index.html" class="brand">
+      <span class="brand-mark">LP</span>
+      <span class="brand-text">LPDP Prep</span>
+    </a>
+    <nav class="nav-links" id="navLinks">
+      <a href="index.html">Beranda</a>
+      <a href="essay.html" class="active">Essay Checker</a>
+      <a href="tbs.html">TBS Practice</a>
+      <a href="interview.html">Interview</a>
+      <a href="history.html">Riwayat</a>
+      <a href="admin.html">Training Data</a>
+      <a href="pricing.html">Upgrade</a>
+      <a href="login.html" class="btn btn-ghost" id="authLink">Masuk</a>
+    </nav>
+    <button class="nav-toggle" id="navToggle" aria-label="Toggle menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<section class="page-header">
+  <div class="container">
+    <span class="eyebrow">Essay Checker</span>
+    <h1>Analisis Essay LPDP-mu</h1>
+    <p>Tempel atau ketik essay-mu. Sistem akan menilai struktur, kejelasan, dampak, dan kesesuaian dengan nilai-nilai LPDP.</p>
+  </div>
+</section>
+
+<section class="tool-layout">
+  <div class="container tool-grid">
+    <div class="panel">
+      <div class="panel-header">
+        <div>
+          <h3>Tulis Essay</h3>
+          <p class="muted" style="margin:0">Minimal 300 kata untuk hasil optimal.</p>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="field">
+          <label for="essayLanguage">Bahasa Essay</label>
+          <select id="essayLanguage">
+            <option value="id" selected>Bahasa Indonesia</option>
+            <option value="en">English</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="degreeLevel">Jenjang Studi</label>
+          <select id="degreeLevel">
+            <option value="s1">S1 (Sarjana)</option>
+            <option value="s2" selected>S2 (Magister)</option>
+            <option value="s3">S3 (Doktor)</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label for="universityLocation">Lokasi Universitas</label>
+        <select id="universityLocation">
+          <option value="indonesia">Dalam Negeri</option>
+          <option value="luar_negeri" selected>Luar Negeri</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="universitySelect">Universitas Tujuan</label>
+        <select id="universitySelect"><option value="">Memuat daftar universitas...</option></select>
+        <div class="help">Belum ada di daftar? Pilih universitas paling mirip — daftar bisa diperluas di Supabase.</div>
+      </div>
+      <div class="field">
+        <label for="essayText">Isi Essay</label>
+        <textarea id="essayText" placeholder="Tempel essay-mu di sini. Essay harus memuat: (1) Kontribusi bagi Indonesia, (2) Rencana Studi & Pasca Studi, (3) Motivasi & Komitmen. Minimal 300 kata."></textarea>
+        <div class="help"><span id="wordCount">0</span> kata • <span id="paraCount">0</span> paragraf</div>
+      </div>
+      <div style="display:flex; gap:12px;">
+        <button class="btn btn-primary" id="analyzeBtn">Analisis Essay</button>
+        <button class="btn btn-ghost" id="sampleBtn">Pakai Contoh</button>
+        <button class="btn btn-ghost" id="clearBtn">Kosongkan</button>
+      </div>
+    </div>
+
+    <div class="panel" id="resultPanel">
+      <div class="panel-header">
+        <h3>Hasil Analisis</h3>
+      </div>
+      <div id="emptyState">
+        <p class="muted">Analisis akan muncul di sini setelah kamu menekan tombol <strong>Analisis Essay</strong>.</p>
+        <ul class="feature-list" style="margin-top:16px;">
+          <li>Skor keseluruhan 0–100</li>
+          <li>Breakdown: struktur, kejelasan, dampak, relevansi</li>
+          <li>Kekuatan, kelemahan, dan saran</li>
+          <li>Analisis tiap paragraf</li>
+        </ul>
+      </div>
+      <div id="resultContent" class="hidden"></div>
+    </div>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="container copyright">© 2026 LPDP Prep. Dibuat untuk pejuang beasiswa Indonesia.</div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="js/supabase-config.js"></script>
+<script src="js/supabase-client.js"></script>
+<script src="js/app.js"></script>
+<script src="js/essay.js"></script>
+</body>
+</html>

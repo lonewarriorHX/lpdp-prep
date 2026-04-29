@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Masuk / Daftar — LPDP Prep</title>
+<link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+<header class="site-header">
+  <div class="container nav">
+    <a href="index.html" class="brand">
+      <span class="brand-mark">LP</span>
+      <span class="brand-text">LPDP Prep</span>
+    </a>
+    <nav class="nav-links" id="navLinks">
+      <a href="index.html">Beranda</a>
+      <a href="essay.html">Essay Checker</a>
+      <a href="tbs.html">TBS Practice</a>
+      <a href="interview.html">Interview</a>
+      <a href="history.html">Riwayat</a>
+      <a href="admin.html">Training Data</a>
+      <a href="pricing.html">Upgrade</a>
+      <a href="login.html" class="btn btn-ghost active" id="authLink">Masuk</a>
+    </nav>
+    <button class="nav-toggle" id="navToggle" aria-label="Toggle menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<main class="auth-wrap">
+  <div class="auth-card">
+    <h1>Selamat Datang</h1>
+    <p class="muted">Masuk untuk menyimpan progres dan essay-mu. <em>Data disimpan lokal di browser.</em></p>
+
+    <div class="tabs">
+      <button id="tabLogin" class="active">Masuk</button>
+      <button id="tabSignup">Daftar</button>
+    </div>
+
+    <div id="alertBox"></div>
+
+    <form id="loginForm">
+      <div class="field">
+        <label for="loginEmail">Email</label>
+        <input type="email" id="loginEmail" required placeholder="kamu@email.com" />
+      </div>
+      <div class="field">
+        <label for="loginPass">Password</label>
+        <input type="password" id="loginPass" required placeholder="••••••••" />
+      </div>
+      <button type="submit" class="btn btn-primary btn-block">Masuk</button>
+    </form>
+
+    <form id="signupForm" class="hidden">
+      <div class="field">
+        <label for="signupName">Nama Lengkap</label>
+        <input type="text" id="signupName" required placeholder="Nama lengkapmu" />
+      </div>
+      <div class="field">
+        <label for="signupEmail">Email</label>
+        <input type="email" id="signupEmail" required placeholder="kamu@email.com" />
+      </div>
+      <div class="field">
+        <label for="signupPass">Password</label>
+        <input type="password" id="signupPass" required minlength="6" placeholder="Minimal 6 karakter" />
+      </div>
+      <button type="submit" class="btn btn-primary btn-block">Daftar</button>
+    </form>
+
+    <p class="muted" style="text-align:center; margin-top:16px; font-size:0.85rem;">Atau <a href="essay.html">lanjut tanpa akun</a></p>
+  </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="js/supabase-config.js"></script>
+<script src="js/supabase-client.js"></script>
+<script src="js/app.js"></script>
+<script src="js/auth.js"></script>
+</body>
+</html>

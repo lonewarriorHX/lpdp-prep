@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Training Data — LPDP Prep</title>
+<link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+<header class="site-header">
+  <div class="container nav">
+    <a href="index.html" class="brand">
+      <span class="brand-mark">LP</span>
+      <span class="brand-text">LPDP Prep</span>
+    </a>
+    <nav class="nav-links" id="navLinks">
+      <a href="index.html">Beranda</a>
+      <a href="essay.html">Essay Checker</a>
+      <a href="tbs.html">TBS Practice</a>
+      <a href="interview.html">Interview</a>
+      <a href="history.html">Riwayat</a>
+      <a href="admin.html" class="active">Training Data</a>
+      <a href="pricing.html">Upgrade</a>
+      <a href="login.html" class="btn btn-ghost" id="authLink">Masuk</a>
+    </nav>
+    <button class="nav-toggle" id="navToggle" aria-label="Toggle menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<section class="page-header">
+  <div class="container">
+    <span class="eyebrow">Training Data</span>
+    <h1>Data Latihan AI</h1>
+    <p>Kelola essay referensi (untuk benchmark Essay Checker) dan pertanyaan referensi (sebagai bahan input model AI di Interview Practice).</p>
+  </div>
+</section>
+
+<section class="tool-layout">
+  <div class="container">
+
+    <div id="loginPrompt" class="panel hidden" style="text-align:center; padding:48px;">
+      <h3>Masuk untuk Menambah Data</h3>
+      <p class="muted">Hanya user yang login yang bisa menambah data referensi.</p>
+      <a href="login.html" class="btn btn-primary">Masuk</a>
+    </div>
+
+    <div id="adminView" class="hidden">
+
+      <div class="admin-tabs">
+        <button class="admin-tab active" data-tab="essays" type="button">Essay Referensi</button>
+        <button class="admin-tab" data-tab="questions" type="button">Pertanyaan Referensi</button>
+      </div>
+
+      <div class="admin-tab-panel" data-panel="essays">
+      <div class="tool-grid">
+        <div class="panel">
+          <h3>Tambah Essay Referensi</h3>
+          <p class="muted">Pastikan essay-nya benar-benar pernah lolos seleksi LPDP.</p>
+
+          <div class="field">
+            <label for="refTitle">Judul / Pengenal</label>
+            <input type="text" id="refTitle" placeholder="Contoh: Awardee 2023 — Water Engineering TU Delft" />
+          </div>
+
+          <div class="form-row">
+            <div class="field">
+              <label for="refLanguage">Bahasa</label>
+              <select id="refLanguage">
+                <option value="id" selected>Bahasa Indonesia</option>
+                <option value="en">English</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="refDegree">Jenjang</label>
+              <select id="refDegree">
+                <option value="">—</option>
+                <option value="s1">S1</option>
+                <option value="s2" selected>S2</option>
+                <option value="s3">S3</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="field">
+              <label for="refLocation">Lokasi</label>
+              <select id="refLocation">
+                <option value="">—</option>
+                <option value="indonesia">Dalam Negeri</option>
+                <option value="luar_negeri" selected>Luar Negeri</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="refUniversity">Universitas</label>
+              <input type="text" id="refUniversity" placeholder="Contoh: TU Delft" />
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="refAuthor">Awardee / Penulis (opsional)</label>
+            <input type="text" id="refAuthor" placeholder="Nama awardee jika diketahui" />
+          </div>
+
+          <div class="field">
+            <label for="refTags">Tag (pisahkan dengan koma)</label>
+            <input type="text" id="refTags" placeholder="lingkungan, air, kepemimpinan" />
+          </div>
+
+          <div class="field">
+            <label for="refContent">Isi Essay</label>
+            <textarea id="refContent" placeholder="Tempel isi lengkap essay-nya di sini..."></textarea>
+            <div class="help"><span id="refWords">0</span> kata</div>
+          </div>
+
+          <div id="refAlert"></div>
+          <button class="btn btn-primary btn-block" id="saveRefBtn">Simpan Essay Referensi</button>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <h3>Daftar Essay Referensi <span class="muted" id="refCount" style="font-weight:400"></span></h3>
+          </div>
+          <div class="field">
+            <input type="text" id="refFilter" placeholder="Cari berdasarkan judul / universitas..." />
+          </div>
+          <div id="refList"></div>
+        </div>
+      </div>
+      </div><!-- /essays panel -->
+
+      <div class="admin-tab-panel hidden" data-panel="questions">
+        <div class="tool-grid">
+          <div class="panel">
+            <h3>Tambah Pertanyaan Referensi</h3>
+            <p class="muted">Pertanyaan ini akan dipakai sebagai contoh (few-shot) untuk model AI saat menggenerate pertanyaan wawancara dari essay user. Tambahkan pertanyaan-pertanyaan tajam yang sering muncul di wawancara LPDP.</p>
+
+            <div class="field">
+              <label for="rqQuestion">Pertanyaan</label>
+              <textarea id="rqQuestion" placeholder="Contoh: Mengapa kamu mau S2 padahal baru saja lulus?" style="min-height:90px;"></textarea>
+            </div>
+
+            <div class="form-row">
+              <div class="field">
+                <label for="rqLanguage">Bahasa</label>
+                <select id="rqLanguage">
+                  <option value="id" selected>Bahasa Indonesia</option>
+                  <option value="en">English</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="rqFocus">Fokus</label>
+                <select id="rqFocus">
+                  <option value="">— pilih —</option>
+                  <option value="Clarity">Clarity / Kejelasan</option>
+                  <option value="Motivation">Motivation / Motivasi</option>
+                  <option value="Confidence">Confidence / Keyakinan</option>
+                  <option value="Alignment">Alignment / Kesesuaian Tujuan</option>
+                  <option value="Impact">Impact / Dampak</option>
+                  <option value="Relevance">Relevance / Relevansi LPDP</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="rqNotes">Catatan / Konteks (opsional)</label>
+              <input type="text" id="rqNotes" placeholder="Contoh: dipakai saat applicant fresh graduate" />
+            </div>
+
+            <div class="field">
+              <label for="rqTags">Tag (pisahkan dengan koma, opsional)</label>
+              <input type="text" id="rqTags" placeholder="fresh graduate, kontribusi, follow-up" />
+            </div>
+
+            <div id="rqAlert"></div>
+            <button class="btn btn-primary btn-block" id="saveRqBtn">Simpan Pertanyaan Referensi</button>
+          </div>
+
+          <div class="panel">
+            <div class="panel-header">
+              <h3>Daftar Pertanyaan Referensi <span class="muted" id="rqCount" style="font-weight:400"></span></h3>
+            </div>
+            <div class="field">
+              <input type="text" id="rqFilter" placeholder="Cari pertanyaan / fokus / tag..." />
+            </div>
+            <div id="rqList"></div>
+          </div>
+        </div>
+      </div><!-- /questions panel -->
+
+    </div>
+
+    <div id="loadingState" class="panel" style="text-align:center; padding:48px;">
+      <p class="muted">Memuat...</p>
+    </div>
+
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="container copyright">© 2026 LPDP Prep.</div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="js/supabase-config.js"></script>
+<script src="js/supabase-client.js"></script>
+<script src="js/app.js"></script>
+<script src="js/admin.js"></script>
+</body>
+</html>

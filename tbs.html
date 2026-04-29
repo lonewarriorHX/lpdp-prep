@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>TBS Practice — LPDP Prep</title>
+<link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+<header class="site-header">
+  <div class="container nav">
+    <a href="index.html" class="brand">
+      <span class="brand-mark">LP</span>
+      <span class="brand-text">LPDP Prep</span>
+    </a>
+    <nav class="nav-links" id="navLinks">
+      <a href="index.html">Beranda</a>
+      <a href="essay.html">Essay Checker</a>
+      <a href="tbs.html" class="active">TBS Practice</a>
+      <a href="interview.html">Interview</a>
+      <a href="history.html">Riwayat</a>
+      <a href="admin.html">Training Data</a>
+      <a href="pricing.html">Upgrade</a>
+      <a href="login.html" class="btn btn-ghost" id="authLink">Masuk</a>
+    </nav>
+    <button class="nav-toggle" id="navToggle" aria-label="Toggle menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<section class="page-header">
+  <div class="container">
+    <span class="eyebrow">TBS Practice</span>
+    <h1>Latihan Tes Bakat Skolastik</h1>
+    <p>Pilih kategori dan jumlah soal. Kerjakan dalam batas waktu, dapatkan skor dan pembahasan tiap soal.</p>
+  </div>
+</section>
+
+<section class="tool-layout">
+  <div class="container">
+
+    <!-- Setup -->
+    <div id="setupView" class="panel tbs-setup">
+      <h3>Atur Sesi Latihan</h3>
+      <p class="muted">Pilih kategori, jumlah soal, dan durasi.</p>
+
+      <label>Kategori</label>
+      <div class="category-grid" id="categoryGrid">
+        <div class="category-card selected" data-cat="verbal">
+          <div style="font-size:1.8rem;">📖</div>
+          <h4>Verbal</h4>
+          <small>Sinonim, analogi, bacaan</small>
+        </div>
+        <div class="category-card" data-cat="numerik">
+          <div style="font-size:1.8rem;">🔢</div>
+          <h4>Numerik</h4>
+          <small>Aritmatika, deret, aljabar</small>
+        </div>
+        <div class="category-card" data-cat="logika">
+          <div style="font-size:1.8rem;">🧩</div>
+          <h4>Logika</h4>
+          <small>Silogisme, pola, penalaran</small>
+        </div>
+        <div class="category-card" data-cat="campuran">
+          <div style="font-size:1.8rem;">🎯</div>
+          <h4>Campuran</h4>
+          <small>Semua kategori</small>
+        </div>
+      </div>
+
+      <div class="form-row" style="margin-top:16px;">
+        <div class="field">
+          <label for="qCount">Jumlah Soal</label>
+          <select id="qCount">
+            <option value="5">5 soal</option>
+            <option value="10" selected>10 soal</option>
+            <option value="15">15 soal</option>
+            <option value="20">20 soal</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="qTime">Durasi</label>
+          <select id="qTime">
+            <option value="5">5 menit</option>
+            <option value="10" selected>10 menit</option>
+            <option value="20">20 menit</option>
+            <option value="30">30 menit</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="progressStats" class="hidden" style="margin-top:8px; padding:14px; background:var(--ink-50); border-radius:10px;">
+        <strong>Progres Kamu</strong>
+        <div id="progressText" class="muted" style="font-size:0.9rem; margin-top:4px;"></div>
+      </div>
+
+      <button class="btn btn-primary btn-lg btn-block" id="startBtn" style="margin-top:20px;">Mulai Latihan</button>
+    </div>
+
+    <!-- Quiz -->
+    <div id="quizView" class="hidden">
+      <div class="quiz-header">
+        <div><strong id="qCat"></strong> <span class="muted" id="qNumLabel"></span></div>
+        <div class="progress"><span id="qProgress"></span></div>
+        <div class="timer" id="timer">10:00</div>
+      </div>
+      <div class="question-card" id="questionCard"></div>
+      <div class="quiz-actions">
+        <button class="btn btn-ghost" id="prevBtn">← Sebelumnya</button>
+        <div>
+          <button class="btn btn-ghost" id="skipBtn">Lewati</button>
+          <button class="btn btn-primary" id="nextBtn">Lanjut →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Results -->
+    <div id="resultView" class="hidden">
+      <div class="panel">
+        <div class="score-hero" id="resultHero"></div>
+        <div class="metrics" id="resultMetrics"></div>
+        <div style="display:flex; gap:12px; margin-top:16px;">
+          <button class="btn btn-primary" id="retryBtn">Coba Lagi</button>
+          <button class="btn btn-ghost" id="reviewToggle">Lihat Pembahasan</button>
+        </div>
+      </div>
+      <div class="panel hidden" id="reviewPanel" style="margin-top:16px;">
+        <h3>Pembahasan</h3>
+        <div class="review-list" id="reviewList"></div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="container copyright">© 2026 LPDP Prep. Dibuat untuk pejuang beasiswa Indonesia.</div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="js/supabase-config.js"></script>
+<script src="js/supabase-client.js"></script>
+<script src="js/app.js"></script>
+<script src="js/tbs-bank.js"></script>
+<script src="js/tbs.js"></script>
+</body>
+</html>
