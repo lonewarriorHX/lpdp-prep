@@ -16,8 +16,8 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 // === Pricing config — edit here to change price ============================
 const PLAN_NAME = "yearly_promo";
-const PLAN_BASE_IDR = 49900;     // Early Bird subscription price
-const TRANSACTION_FEE_IDR = 2500; // Midtrans handling fee passed to user
+const PLAN_BASE_IDR = 1000;     // Early Bird subscription price
+const TRANSACTION_FEE_IDR = 0; // Midtrans handling fee passed to user
 const PLAN_LABEL = "SIAP Studi Pro Early Bird — 1 Tahun";
 const PLAN_DURATION_DAYS = 365;
 // Promo coupons. Add more entries as needed.
