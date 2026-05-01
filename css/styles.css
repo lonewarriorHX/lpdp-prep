@@ -120,24 +120,29 @@ small { color: var(--ink-500); }
 .nav-toggle { display: none; background: none; border: 0; cursor: pointer; padding: 8px; }
 .nav-toggle span { display: block; width: 22px; height: 2px; background: var(--ink-900); margin: 4px 0; border-radius: 2px; }
 
-/* Hero — graduate photo background with dark gradient overlay */
+/* Hero — graduate photo background (in .hero-bg-fixed) with dark gradient overlay */
 .hero {
   position: relative;
   padding: 96px 0 64px;
   color: #fff;
-  background-color: #0b1426; /* fallback if image fails */
-  background-image:
-    linear-gradient(180deg,
-      rgba(7, 13, 27, 0.78) 0%,
-      rgba(7, 13, 27, 0.55) 45%,
-      rgba(7, 13, 27, 0.40) 70%,
-      rgba(239, 246, 255, 0.92) 100%),
-    url('../images/hero-bg.jpg');
-  background-size: cover, cover;
-  background-position: center, center 30%;
-  background-repeat: no-repeat, no-repeat;
-  background-attachment: scroll, fixed;
+  background-color: transparent;
+  background-image: linear-gradient(180deg,
+    rgba(7, 13, 27, 0.78) 0%,
+    rgba(7, 13, 27, 0.55) 45%,
+    rgba(7, 13, 27, 0.40) 70%,
+    rgba(239, 246, 255, 0.92) 100%);
   isolation: isolate;
+}
+
+/* Photo lives in a separate fixed-position div so iOS Safari honors it
+   (iOS ignores background-attachment: fixed for performance). */
+.hero-bg-fixed {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: url('../images/hero-bg.jpg') center 30% / cover no-repeat;
+  background-color: #0b1426;
+  pointer-events: none;
 }
 .hero::before {
   /* extra side-vignette so left-aligned copy keeps contrast */
@@ -237,7 +242,8 @@ small { color: var(--ink-500); }
 .vc-chip { background: var(--amber-500); color: var(--white-700); padding: 10px 14px; border-radius: 999px; font-size: 0.85rem; text-align: center; font-weight: 500; }
 
 /* Sections */
-.features, .steps, .cta { padding: 72px 0; }
+.features, .steps, .cta { padding: 72px 0; background: var(--bg); position: relative; }
+.ctat { padding: 72px 0; background: #ffffff00; position: relative; }
 .section-head { text-align: center; max-width: 680px; margin: 0 auto 48px; }
 .section-head p { color: var(--ink-500); font-size: 1.05rem; }
 
@@ -1170,7 +1176,7 @@ textarea { resize: vertical; min-height: 260px; line-height: 1.6; }
 .ai-status.success { color: var(--green-600); }
 
 /* ---------------- Alumni references section ---------------- */
-.alumni { padding: 64px 0; }
+.alumni { padding: 64px 0; background: var(--bg); position: relative; }
 .alumni-card {
   display: grid;
   grid-template-columns: 1.1fr 0.9fr;
@@ -1398,7 +1404,7 @@ textarea { resize: vertical; min-height: 260px; line-height: 1.6; }
 }
 
 /* ---------------- Contributor / Alumni partner section ---------------- */
-.contributor { padding: 72px 0; }
+.contributor { padding: 72px 0; background: var(--bg); position: relative; }
 .contributor-card {
   background: linear-gradient(135deg, #0b1426 0%, #1e3a8a 60%, #2563eb 100%);
   border-radius: var(--radius-xl);
