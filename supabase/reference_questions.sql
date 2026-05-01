@@ -1,5 +1,5 @@
 -- ============================================================================
--- LPDP Prep — Reference interview questions used as few-shot seeds for the AI
+-- SIAP Studi — Reference interview questions used as few-shot seeds for the AI
 -- Run this AFTER schema.sql.
 -- ============================================================================
 

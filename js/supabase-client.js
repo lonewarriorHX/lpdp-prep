@@ -7,7 +7,7 @@
 
   if (isPlaceholder || typeof window.supabase === 'undefined') {
     if (isPlaceholder) {
-      console.warn('[LPDP Prep] Supabase not configured — running in offline mode. Fill in js/supabase-config.js to enable auth + database.');
+      console.warn('[SIAP Studi] Supabase not configured — running in offline mode. Fill in js/supabase-config.js to enable auth + database.');
     }
     window.sb = null;
     return;
@@ -18,7 +18,7 @@
       auth: { persistSession: true, autoRefreshToken: true }
     });
   } catch (err) {
-    console.error('[LPDP Prep] Failed to initialize Supabase:', err);
+    console.error('[SIAP Studi] Failed to initialize Supabase:', err);
     window.sb = null;
   }
 })();

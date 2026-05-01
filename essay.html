@@ -3,15 +3,15 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Essay Checker — LPDP Prep</title>
+<title>Essay Checker — SIAP Studi</title>
 <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
 <header class="site-header">
   <div class="container nav">
     <a href="index.html" class="brand">
-      <span class="brand-mark">LP</span>
-      <span class="brand-text">LPDP Prep</span>
+      <img src="images/logo.png" alt="SIAP Studi" class="brand-mark" />
+      <span class="brand-text">SIAP Studi</span>
     </a>
     <nav class="nav-links" id="navLinks">
       <a href="index.html">Beranda</a>
@@ -19,8 +19,6 @@
       <a href="tbs.html">TBS Practice</a>
       <a href="interview.html">Interview</a>
       <a href="history.html">Riwayat</a>
-      <a href="admin.html">Training Data</a>
-      <a href="pricing.html">Upgrade</a>
       <a href="login.html" class="btn btn-ghost" id="authLink">Masuk</a>
     </nav>
     <button class="nav-toggle" id="navToggle" aria-label="Toggle menu">
@@ -89,24 +87,36 @@
 
     <div class="panel" id="resultPanel">
       <div class="panel-header">
-        <h3>Hasil Analisis</h3>
+        <h3>Skor AI</h3>
       </div>
       <div id="emptyState">
-        <p class="muted">Analisis akan muncul di sini setelah kamu menekan tombol <strong>Analisis Essay</strong>.</p>
+        <p class="muted">Skor akan muncul di sini setelah kamu menekan tombol <strong>Analisis Essay</strong>.</p>
         <ul class="feature-list" style="margin-top:16px;">
           <li>Skor keseluruhan 0–100</li>
-          <li>Breakdown: struktur, kejelasan, dampak, relevansi</li>
-          <li>Kekuatan, kelemahan, dan saran</li>
-          <li>Analisis tiap paragraf</li>
+          <li>Cakupan 3 aspek wajib</li>
+          <li>Kemiripan dengan essay lolos</li>
         </ul>
       </div>
       <div id="resultContent" class="hidden"></div>
     </div>
   </div>
+
+  <!-- Row 2: full-width details (metrics, awardee feedback, strengths/weaknesses, paragraph analysis) -->
+  <div class="container" style="margin-top:24px;">
+    <div class="panel" id="detailsPanel">
+      <div class="panel-header">
+        <h3>Penjelasan Lengkap</h3>
+      </div>
+      <div id="detailsEmpty">
+        <p class="muted">Penjelasan rinci akan muncul di sini setelah analisis selesai — metrik detail, feedback komparatif AI, kekuatan & kelemahan, saran perbaikan, dan analisis tiap paragraf.</p>
+      </div>
+      <div id="detailsContent" class="hidden"></div>
+    </div>
+  </div>
 </section>
 
 <footer class="site-footer">
-  <div class="container copyright">© 2026 LPDP Prep. Dibuat untuk pejuang beasiswa Indonesia.</div>
+  <div class="container copyright">© 2026 SIAP Studi. Dibuat untuk pejuang beasiswa Indonesia.</div>
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -114,5 +124,7 @@
 <script src="js/supabase-client.js"></script>
 <script src="js/app.js"></script>
 <script src="js/essay.js"></script>
+<!-- Vercel Speed Insights (auto-injected when deployed to Vercel; no-op locally) -->
+<script defer src="/_vercel/speed-insights/script.js"></script>
 </body>
 </html>
