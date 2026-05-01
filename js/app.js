@@ -7,6 +7,12 @@
   const App = {
     currentUser: null, // { id, name, email } — populated after initAuth or local login
     isPro: false,      // populated from profiles.is_pro after auth
+    isAlumni: false,   // populated from profiles.is_alumni
+    alumniStatus: 'none',
+    alumniPromoCode: null,
+    alumniUniversity: null,
+    alumniYear: null,
+    alumniNotes: null,
 
     // ---------------- AUTH ----------------
     async initAuth() {
@@ -21,7 +27,7 @@
             App.updateAuthLink();
           });
         } catch (err) {
-          console.warn('[LPDP Prep] Auth init failed:', err);
+          console.warn('[SIAP Studi] Auth init failed:', err);
         }
       } else {
         // Offline fallback — load from localStorage
@@ -35,19 +41,53 @@
 
     async _refreshProStatus() {
       App.isPro = false;
+      App.isAlumni = false;
+      App.alumniStatus = 'none';
+      App.alumniPromoCode = null;
+      App.alumniUniversity = null;
+      App.alumniYear = null;
+      App.alumniNotes = null;
       if (!window.sb || !App.currentUser) return;
       try {
         const { data } = await window.sb
           .from('profiles')
-          .select('is_pro, pro_expires_at')
+          .select('is_pro, pro_expires_at, is_alumni, alumni_status, alumni_promo_code, alumni_university, alumni_year, alumni_notes')
           .eq('id', App.currentUser.id)
           .maybeSingle();
         const flagged = !!data?.is_pro;
         const notExpired = !data?.pro_expires_at ||
                            new Date(data.pro_expires_at) > new Date();
         App.isPro = flagged && notExpired;
+        App.isAlumni = !!data?.is_alumni;
+        App.alumniStatus = data?.alumni_status || 'none';
+        App.alumniPromoCode = data?.alumni_promo_code || null;
+        App.alumniUniversity = data?.alumni_university || null;
+        App.alumniYear = data?.alumni_year || null;
+        App.alumniNotes = data?.alumni_notes || null;
       } catch (err) {
-        console.warn('[LPDP Prep] Pro status check failed:', err);
+        console.warn('[SIAP Studi] Profile status check failed:', err);
+      }
+    },
+
+    async submitAlumniRequest({ university, year, notes }) {
+      if (!window.sb || !App.currentUser) {
+        return { ok: false, error: 'Anda harus login terlebih dahulu.' };
+      }
+      try {
+        const { error } = await window.sb
+          .from('profiles')
+          .update({
+            alumni_status: 'pending',
+            alumni_university: university || null,
+            alumni_year: year || null,
+            alumni_notes: notes || null,
+          })
+          .eq('id', App.currentUser.id);
+        if (error) return { ok: false, error: error.message };
+        await App._refreshProStatus();
+        return { ok: true };
+      } catch (err) {
+        return { ok: false, error: err.message || 'Gagal mengirim permintaan.' };
       }
     },
 
@@ -55,6 +95,8 @@
       if (!session || !session.user) {
         App.currentUser = null;
         App.isPro = false;
+        App.isAlumni = false;
+        App.alumniStatus = 'none';
         return;
       }
       const u = session.user;
@@ -67,6 +109,8 @@
 
     getUser() { return App.currentUser; },
     getIsPro() { return App.isPro; },
+    getIsAlumni() { return App.isAlumni; },
+    getAlumniStatus() { return App.alumniStatus; },
     isAuthEnabled() { return !!window.sb; },
 
     async signup(name, email, password) {
@@ -126,14 +170,51 @@
       if (!link) return;
       const user = App.currentUser;
       if (user) {
-        link.textContent = 'Keluar (' + (user.name || '').split(' ')[0] + ')';
-        link.href = '#';
-        link.onclick = function (e) { e.preventDefault(); App.logout(); };
+        const firstName = (user.name || '').split(' ')[0] || 'Akun';
+        link.textContent = 'Akun (' + firstName + ')';
+        link.href = 'account.html';
+        link.onclick = null;
       } else {
         link.textContent = 'Masuk';
         link.href = 'login.html';
         link.onclick = null;
       }
+    },
+
+    // ---------------- USAGE LIMITS ----------------
+    // Atomically checks the daily cap for the action and records one use if allowed.
+    // Returns { ok, allowed, used, limit, remaining, isPro, error? }
+    async checkAndRecordUsage(action) {
+      if (!window.sb || !App.currentUser) {
+        return { ok: false, allowed: false, error: 'not_logged_in' };
+      }
+      try {
+        const { data, error } = await window.sb.rpc('check_and_record_usage', { p_action: action });
+        if (error) {
+          console.warn('[SIAP Studi] checkAndRecordUsage error:', error);
+          return { ok: false, allowed: false, error: error.message };
+        }
+        return {
+          ok: true,
+          allowed:   !!data.allowed,
+          used:      data.used ?? 0,
+          limit:     data.limit ?? 0,
+          remaining: data.remaining ?? 0,
+          isPro:     !!data.is_pro,
+        };
+      } catch (err) {
+        console.warn('[SIAP Studi] checkAndRecordUsage threw:', err);
+        return { ok: false, allowed: false, error: String(err) };
+      }
+    },
+
+    async getTodayUsage(action) {
+      if (!window.sb || !App.currentUser) return 0;
+      try {
+        const { data, error } = await window.sb.rpc('get_today_usage', { p_action: action });
+        if (error) return 0;
+        return data ?? 0;
+      } catch { return 0; }
     },
 
     // ---------------- ESSAY ----------------
@@ -142,11 +223,35 @@
 
     async saveEssayToDb(content, meta, analysis) {
       if (!window.sb || !App.currentUser) return { ok: false, skipped: true };
+
+      // Build a clean snapshot — strip transient/loading flags before persisting
+      const snapshot = analysis ? {
+        overall: analysis.overall,
+        structure: analysis.structure,
+        clarity: analysis.clarity,
+        impact: analysis.impact,
+        coverageAvg: analysis.coverageAvg,
+        coveredCount: analysis.coveredCount,
+        wordN: analysis.wordN,
+        sentences: analysis.sentences,
+        paragraphs: analysis.paragraphs,
+        coverage: analysis.coverage,
+        strengths: analysis.strengths,
+        weaknesses: analysis.weaknesses,
+        suggestions: analysis.suggestions,
+        paraAnalysis: analysis.paraAnalysis,
+        similarity: analysis.similarity,                  // includes topMatches list + scores
+        awardeeFeedback: analysis.awardeeFeedback,         // AI per-aspect comparative feedback
+        awardeeFeedbackIsPro: analysis.awardeeFeedbackIsPro,
+        awardeeFeedbackError: analysis.awardeeFeedbackError,
+        context: analysis.context,
+      } : null;
+
       const { error } = await window.sb.from('essays').insert({
         user_id: App.currentUser.id,
         content,
         overall_score: analysis?.overall ?? null,
-        analysis,
+        analysis: snapshot,
         degree_level: meta?.degreeLevel ?? null,
         university_location: meta?.universityLocation ?? null,
         university_id: meta?.universityId ?? null,
@@ -154,7 +259,7 @@
         coverage: analysis?.coverage ?? null,
         language: meta?.language ?? null,
       });
-      if (error) { console.warn('[LPDP Prep] saveEssayToDb error:', error); return { ok: false, error }; }
+      if (error) { console.warn('[SIAP Studi] saveEssayToDb error:', error); return { ok: false, error }; }
       return { ok: true };
     },
 
@@ -166,7 +271,7 @@
         .order('created_at', { ascending: false });
       if (language) q = q.eq('language', language);
       const { data, error } = await q;
-      if (error) { console.warn('[LPDP Prep] fetchReferenceEssays error:', error); return []; }
+      if (error) { console.warn('[SIAP Studi] fetchReferenceEssays error:', error); return []; }
       return data || [];
     },
 
@@ -202,7 +307,7 @@
         .order('created_at', { ascending: false });
       if (language) q = q.eq('language', language);
       const { data, error } = await q;
-      if (error) { console.warn('[LPDP Prep] fetchReferenceQuestions error:', error); return []; }
+      if (error) { console.warn('[SIAP Studi] fetchReferenceQuestions error:', error); return []; }
       return data || [];
     },
 
@@ -259,7 +364,55 @@
         }
         return { ok: true, feedback: data.feedback, isPro: !!data.isPro };
       } catch (err) {
-        console.warn('[LPDP Prep] getAwardeeFeedback error:', err);
+        console.warn('[SIAP Studi] getAwardeeFeedback error:', err);
+        return { ok: false, error: String(err) };
+      }
+    },
+
+    // Calls the `interview-questions` Edge Function. Returns:
+    //   { ok: true, questions: [{q, focus}] }
+    //   { ok: false, error: '...' }
+    async generateInterviewQuestions({ essay, n, language }) {
+      if (!window.sb) return { ok: false, error: 'Supabase belum terkonfigurasi.' };
+      const references = await App.fetchReferenceQuestions(language).catch(() => []);
+      try {
+        const { data, error } = await window.sb.functions.invoke('interview-questions', {
+          body: {
+            essay,
+            n,
+            language: language || 'id',
+            references: (references || []).map(r => ({
+              question: r.question, focus: r.focus, notes: r.notes,
+            })),
+          },
+        });
+        if (error) return { ok: false, error: error.message || String(error) };
+        if (!data || data.ok === false) {
+          return { ok: false, error: data?.error || 'Gagal membuat pertanyaan.' };
+        }
+        return { ok: true, questions: data.questions || [], refCount: references.length };
+      } catch (err) {
+        console.warn('[SIAP Studi] generateInterviewQuestions error:', err);
+        return { ok: false, error: String(err) };
+      }
+    },
+
+    // Calls the `interview-evaluate` Edge Function. Returns:
+    //   { ok: true, evaluation: {...} } | { ok: false, error: '...' }
+    async evaluateInterview({ essay, language, qa }) {
+      if (!window.sb) return { ok: false, error: 'Supabase belum terkonfigurasi.' };
+      if (!Array.isArray(qa) || !qa.length) return { ok: false, error: 'Tidak ada Q&A untuk dievaluasi.' };
+      try {
+        const { data, error } = await window.sb.functions.invoke('interview-evaluate', {
+          body: { essay: essay || '', language: language || 'id', qa },
+        });
+        if (error) return { ok: false, error: error.message || String(error) };
+        if (!data || data.ok === false) {
+          return { ok: false, error: data?.error || 'Gagal evaluasi.' };
+        }
+        return { ok: true, evaluation: data.evaluation };
+      } catch (err) {
+        console.warn('[SIAP Studi] evaluateInterview error:', err);
         return { ok: false, error: String(err) };
       }
     },
@@ -271,7 +424,7 @@
         .select('id, name, short_name, country')
         .eq('location', location)
         .order('name', { ascending: true });
-      if (error) { console.warn('[LPDP Prep] fetchUniversities error:', error); return []; }
+      if (error) { console.warn('[SIAP Studi] fetchUniversities error:', error); return []; }
       return data || [];
     },
 
@@ -349,7 +502,7 @@
         .select('id, category, subcategory, question, options, answer_index, explanation');
       if (category && category !== 'campuran') q = q.eq('category', category);
       const { data, error } = await q;
-      if (error) { console.warn('[LPDP Prep] fetchTbsQuestions error:', error); return []; }
+      if (error) { console.warn('[SIAP Studi] fetchTbsQuestions error:', error); return []; }
       return (data || []).map(r => ({
         q: r.question,
         opts: r.options,
@@ -392,7 +545,7 @@
         percent: session.percent,
         duration_seconds: session.duration ?? null,
       });
-      if (error) console.warn('[LPDP Prep] saveTbsSessionToDb error:', error);
+      if (error) console.warn('[SIAP Studi] saveTbsSessionToDb error:', error);
       return { ok: !error };
     },
 
@@ -407,7 +560,7 @@
         overall_score: session.overall,
         evaluation: session.evaluation,
       });
-      if (error) console.warn('[LPDP Prep] saveInterviewSessionToDb error:', error);
+      if (error) console.warn('[SIAP Studi] saveInterviewSessionToDb error:', error);
       return { ok: !error };
     },
   };

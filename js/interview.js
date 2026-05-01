@@ -44,133 +44,22 @@
   const saved = App.getEssay();
   if (saved) { essayInput.value = saved; wc.textContent = saved.trim().split(/\s+/).length; }
 
-  // ---------- AI settings (key persisted in localStorage) ----------
-  const AI_KEY_STORE = 'lpdp_anthropic_key';
-  const AI_MODEL_STORE = 'lpdp_anthropic_model';
-  const AI_TEMP_STORE = 'lpdp_anthropic_temp';
-  const AI_ENABLE_STORE = 'lpdp_ai_enabled';
-
-  const aiEnable = el('aiEnable');
-  const aiFields = el('aiFields');
-  const aiKey = el('aiKey');
-  const aiModel = el('aiModel');
-  const aiTemp = el('aiTemp');
+  // ---------- AI status indicator ----------
   const aiStatus = el('aiStatus');
   const aiRefCount = el('aiRefCount');
-
-  // Restore saved AI prefs
-  try {
-    aiKey.value = localStorage.getItem(AI_KEY_STORE) || '';
-    const m = localStorage.getItem(AI_MODEL_STORE); if (m) aiModel.value = m;
-    const t = localStorage.getItem(AI_TEMP_STORE); if (t) aiTemp.value = t;
-    aiEnable.checked = localStorage.getItem(AI_ENABLE_STORE) === '1';
-  } catch {}
-  aiFields.classList.toggle('hidden', !aiEnable.checked);
-
-  aiEnable.addEventListener('change', () => {
-    aiFields.classList.toggle('hidden', !aiEnable.checked);
-    localStorage.setItem(AI_ENABLE_STORE, aiEnable.checked ? '1' : '0');
-  });
-  aiKey.addEventListener('change', () => localStorage.setItem(AI_KEY_STORE, aiKey.value.trim()));
-  aiModel.addEventListener('change', () => localStorage.setItem(AI_MODEL_STORE, aiModel.value));
-  aiTemp.addEventListener('change', () => localStorage.setItem(AI_TEMP_STORE, aiTemp.value));
 
   // Show how many reference questions are available
   (async () => {
     try {
       const refs = await App.fetchReferenceQuestions();
-      aiRefCount.textContent = refs.length + ' pertanyaan referensi tersedia';
+      if (aiRefCount) aiRefCount.textContent = refs.length + ' pertanyaan referensi tersedia';
     } catch {}
   })();
 
   function setAiStatus(msg, kind) {
+    if (!aiStatus) return;
     aiStatus.className = 'ai-status' + (kind ? ' ' + kind : '');
     aiStatus.textContent = msg || '';
-  }
-
-  // ---------- Claude API call ----------
-  async function callClaude({ apiKey, model, temperature, system, user }) {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-        'anthropic-version': '2023-06-01',
-        'x-api-key': apiKey,
-        'anthropic-dangerous-direct-browser-access': 'true',
-      },
-      body: JSON.stringify({
-        model,
-        max_tokens: 2048,
-        temperature,
-        system,
-        messages: [{ role: 'user', content: user }],
-      }),
-    });
-    if (!res.ok) {
-      let detail = '';
-      try { detail = (await res.json())?.error?.message || ''; } catch {}
-      throw new Error('Claude API ' + res.status + (detail ? ': ' + detail : ''));
-    }
-    const data = await res.json();
-    return (data.content || []).map(c => c.text || '').join('\n').trim();
-  }
-
-  // Robust JSON-array extractor: tolerates code fences and prose around the array.
-  function extractJsonArray(text) {
-    if (!text) return null;
-    // Strip ```json fences
-    const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
-    const candidate = fenced ? fenced[1] : text;
-    const start = candidate.indexOf('[');
-    const end = candidate.lastIndexOf(']');
-    if (start < 0 || end <= start) return null;
-    try { return JSON.parse(candidate.slice(start, end + 1)); }
-    catch { return null; }
-  }
-
-  async function generateQuestionsWithAI({ essay, n, lang, refs, apiKey, model, temperature }) {
-    const allowedFoci = ['Clarity', 'Motivation', 'Confidence', 'Alignment', 'Impact', 'Relevance'];
-    const langName = lang === 'en' ? 'English' : 'Bahasa Indonesia';
-    const langInstr = lang === 'en'
-      ? 'Write every question in fluent, natural English.'
-      : 'Tulis setiap pertanyaan dalam Bahasa Indonesia yang natural dan tajam (gunakan "kamu" / "Anda" konsisten).';
-
-    const refList = (refs || []).slice(0, 25).map((r, i) =>
-      `${i + 1}. [${r.focus || '?'}] ${r.question}${r.notes ? '  (catatan: ' + r.notes + ')' : ''}`
-    ).join('\n');
-
-    const system = [
-      'You are a senior LPDP scholarship interviewer in Indonesia.',
-      'Your job is to read an applicant\'s essay and produce sharp, personalized interview questions that probe weaknesses, hidden assumptions, vague claims, timeline issues, motivation gaps, and contribution-vs-feasibility tensions specific to THIS candidate.',
-      'Avoid generic questions that could apply to anyone — every question must reference something concrete from the essay.',
-      'Mix question types: at least one introduction question, one motivation question, several essay-specific challenges (probing weak claims, missing numbers, timeline gaps), one return-to-Indonesia / contribution question, one curveball.',
-      'Each question must include a "focus" tag from this exact set: ' + allowedFoci.join(', ') + '.',
-      langInstr,
-      'Return ONLY a JSON array. No commentary, no markdown fences. Format: [{"q": "...", "focus": "Motivation"}, ...].',
-    ].join(' ');
-
-    const user = [
-      'REFERENCE QUESTIONS (use as inspiration for tone, depth, and follow-up style — do NOT copy verbatim):',
-      refList || '(no reference questions provided yet — rely on best practices for LPDP interviews)',
-      '',
-      'CANDIDATE ESSAY:',
-      '"""',
-      essay,
-      '"""',
-      '',
-      `Generate exactly ${n} interview questions in ${langName}, personalized to the essay above.`,
-      'Return JSON only.',
-    ].join('\n');
-
-    const raw = await callClaude({ apiKey, model, temperature, system, user });
-    const arr = extractJsonArray(raw);
-    if (!Array.isArray(arr) || !arr.length) {
-      throw new Error('AI tidak mengembalikan JSON yang valid.');
-    }
-    return arr.map(item => ({
-      q: String(item.q || item.question || '').trim(),
-      focus: allowedFoci.includes(item.focus) ? item.focus : 'Clarity',
-    })).filter(x => x.q.length > 8).slice(0, n);
   }
 
   // --- Question generation based on essay content ---
@@ -392,39 +281,24 @@
     state.perQuestionSec = parseInt(el('perQuestionSec').value, 10) || 90;
 
     const startBtn = el('startInterviewBtn');
-    const useAI = aiEnable.checked && (aiKey.value || '').trim().length > 10;
+    startBtn.disabled = true;
+    startBtn.textContent = 'AI sedang membuat pertanyaan...';
+    setAiStatus('AI sedang menyusun pertanyaan personal dari essay-mu...', '');
 
-    if (useAI) {
-      startBtn.disabled = true;
-      startBtn.textContent = 'AI sedang membuat pertanyaan...';
-      setAiStatus('Mengambil pertanyaan referensi & memanggil model...', '');
-      try {
-        const refs = await App.fetchReferenceQuestions(shortLang);
-        const apiKey = (aiKey.value || '').trim();
-        const model = aiModel.value;
-        const temperature = parseFloat(aiTemp.value) || 0.7;
-        const aiQuestions = await generateQuestionsWithAI({
-          essay, n, lang: shortLang, refs, apiKey, model, temperature
-        });
-        if (aiQuestions.length < Math.max(3, Math.floor(n / 2))) {
-          throw new Error('Jumlah pertanyaan dari AI terlalu sedikit.');
-        }
-        state.questions = aiQuestions;
-        state.aiUsed = true;
-        setAiStatus(`✓ ${aiQuestions.length} pertanyaan dibuat oleh ${model} berdasarkan ${refs.length} referensi.`, 'success');
-      } catch (err) {
-        console.warn('AI question gen failed:', err);
-        setAiStatus('⚠ ' + (err?.message || err) + ' — pakai pertanyaan rule-based.', 'error');
-        state.questions = generateQuestions(essay, n, shortLang);
-        state.aiUsed = false;
-      } finally {
-        startBtn.disabled = false;
-        startBtn.textContent = 'Lanjut ke Pengecekan Kamera →';
-      }
+    const result = await App.generateInterviewQuestions({ essay, n, language: shortLang });
+
+    if (result.ok && result.questions.length >= Math.max(3, Math.floor(n / 2))) {
+      state.questions = result.questions;
+      state.aiUsed = true;
+      setAiStatus(`✓ ${result.questions.length} pertanyaan dibuat AI berdasarkan ${result.refCount || 0} referensi.`, 'success');
     } else {
+      console.warn('AI question gen failed:', result.error);
+      setAiStatus('⚠ ' + (result.error || 'AI gagal') + ' — pakai pertanyaan rule-based.', 'error');
       state.questions = generateQuestions(essay, n, shortLang);
       state.aiUsed = false;
     }
+    startBtn.disabled = false;
+    startBtn.textContent = 'Lanjut ke Pengecekan Kamera →';
 
     state.answers = new Array(state.questions.length).fill('');
     state.audioBlobs = new Array(state.questions.length).fill(null);
@@ -606,14 +480,14 @@
     chat.scrollTop = chat.scrollHeight;
   }
 
-  function advanceQuestion() {
+  async function advanceQuestion() {
     if (state.finished) return;
     // Finalize recording (stops recorder -> will save blob to current idx)
     if (media.recording) stopRecording(true);
     stopQuestionTimer();
 
     if (state.idx === state.questions.length - 1) {
-      finish();
+      await finish();
     } else {
       state.idx++;
       renderQ();
@@ -982,103 +856,190 @@
     return { score, notes, words };
   }
 
-  function finish() {
+  async function finish() {
     state.finished = true;
     if (state.timerId) clearInterval(state.timerId);
     stopQuestionTimer();
-    // Stop any ongoing recording & release camera/mic
     if (media.recording) stopRecording(true);
     stopMediaStream();
     el('cameraPip').classList.add('hidden');
     el('interviewStage').classList.remove('paused');
-    const evals = state.questions.map((q, i) => ({ q, ans: state.answers[i], eval: evaluateAnswer(q, state.answers[i]) }));
-    const answered = evals.filter(e => e.ans && e.ans.trim().length > 20);
-    const overall = answered.length
-      ? Math.round(answered.reduce((s, e) => s + e.eval.score, 0) / answered.length)
-      : 0;
 
-    // Category breakdown (by focus)
-    const byFocus = {};
-    evals.forEach(e => {
-      const k = e.q.focus;
-      if (!byFocus[k]) byFocus[k] = { total: 0, count: 0 };
-      byFocus[k].total += e.eval.score;
-      byFocus[k].count++;
-    });
-    const focusScores = {};
-    Object.keys(byFocus).forEach(k => focusScores[k] = Math.round(byFocus[k].total / byFocus[k].count));
-
-    // Aggregate strengths/weaknesses/suggestions
-    const allNotes = evals.flatMap(e => e.eval.notes);
-    const noteCount = {};
-    allNotes.forEach(n => noteCount[n] = (noteCount[n] || 0) + 1);
-    const topIssues = Object.entries(noteCount).sort((a, b) => b[1] - a[1]).slice(0, 5).map(x => x[0]);
-
-    const strengths = [];
-    const weaknesses = [];
-    const suggestions = [];
     const isEn = state.shortLang === 'en';
     const L = (id, en) => isEn ? en : id;
 
-    if (overall >= 75) strengths.push(L(
-      'Jawaban secara keseluruhan solid, jelas, dan percaya diri.',
-      'Answers are solid, clear, and confident overall.'));
-    if (answered.length === evals.length) strengths.push(L(
-      'Menjawab semua pertanyaan — menunjukkan persiapan yang matang.',
-      'Answered every question — shows strong preparation.'));
-    if (evals.some(e => /\b\d+/.test(e.ans || ''))) strengths.push(L(
-      'Menyertakan data/angka untuk memperkuat argumen.',
-      'Used data / numbers to back up arguments.'));
-    if (evals.some(e => /(kembali ke indonesia|kontribusi|contribution|return to indonesia)/i.test(e.ans || ''))) strengths.push(L(
-      'Visi kontribusi untuk Indonesia tersampaikan jelas.',
-      'Vision for contributing to Indonesia comes across clearly.'));
-    if (strengths.length === 0) strengths.push(L(
-      'Upaya menjawab sudah ada — fokus untuk memperkuat substansi.',
-      'You made an effort — now focus on strengthening the substance.'));
-
-    if (answered.length < evals.length) weaknesses.push(
-      (evals.length - answered.length) + (isEn ? ' question(s) were unanswered or too brief.' : ' pertanyaan tidak terjawab atau terlalu pendek.')
-    );
-    if (focusScores.Impact && focusScores.Impact < 65) weaknesses.push(L(
-      'Aspek dampak/kontribusi perlu dipertajam dengan contoh konkret.',
-      'The impact / contribution dimension needs sharper concrete examples.'));
-    if (focusScores.Confidence && focusScores.Confidence < 65) weaknesses.push(L(
-      'Tingkat keyakinan dalam jawaban perlu ditingkatkan.',
-      'Confidence level in your answers needs to be raised.'));
-    if (focusScores.Alignment && focusScores.Alignment < 65) weaknesses.push(L(
-      'Kesesuaian rencana dengan nilai LPDP belum sepenuhnya tergambar.',
-      'Alignment between your plans and LPDP values is not fully visible yet.'));
-    if (weaknesses.length === 0) weaknesses.push(L(
-      'Tidak ada kelemahan besar — polish jawaban dengan detail tambahan.',
-      'No major weaknesses — polish answers with extra detail.'));
-
-    topIssues.forEach(i => suggestions.push(i));
-    if (suggestions.length < 3) suggestions.push(L(
-      'Latih pengucapan di depan cermin atau rekam diri sendiri untuk mengevaluasi intonasi.',
-      'Practice out loud in front of a mirror or record yourself to evaluate tone and pacing.'));
-    if (suggestions.length < 4) suggestions.push(L(
-      'Siapkan 2–3 cerita STAR (Situation, Task, Action, Result) untuk dipakai di beberapa pertanyaan.',
-      'Prepare 2–3 STAR stories (Situation, Task, Action, Result) you can reuse across questions.'));
-
-    // Render
+    // Switch to result stage
     el('interviewStage').classList.add('hidden');
     el('resultStage').classList.remove('hidden');
 
-    const readinessTitle = overall >= 80
-      ? L('Sangat Siap', 'Very Ready')
-      : overall >= 65 ? L('Cukup Siap', 'Fairly Ready')
-      : overall >= 50 ? L('Perlu Latihan Lagi', 'Needs More Practice')
-      : L('Butuh Persiapan Lebih Matang', 'Needs Much More Preparation');
-    const readinessSub = overall >= 80
+    // ---------- Free tier: lock the result, skip the expensive AI eval entirely ----------
+    const isPro = App.getIsPro ? App.getIsPro() : false;
+    if (!isPro) {
+      const answeredCount = state.answers.filter(a => a && a.trim().length > 20).length;
+      const totalQ = state.questions.length;
+      el('iResultHero').innerHTML = `
+        <div class="big-score" style="opacity:0.4;">
+          <div class="big-score-value">??<small>/ 100</small></div>
+        </div>
+        <div>
+          <h3>${L('Latihan Wawancara Selesai 🎉', 'Practice Interview Complete 🎉')}</h3>
+          <p class="muted" style="margin:0">${answeredCount} ${L('dari', 'of')} ${totalQ} ${L('pertanyaan terjawab', 'questions answered')} • ${el('iTimer').textContent} ${L('total', 'total')}</p>
+          <p style="margin-top:8px;">${L('Bagus! Anda sudah mencoba simulasi wawancara penuh.', 'Great! You completed a full interview simulation.')}</p>
+        </div>
+      `;
+      // Replace the rest of the result panel with a paywall card
+      el('iMetrics').innerHTML = '';
+      const panel = el('resultStage').querySelector('.panel');
+      panel.innerHTML = `
+        <div class="score-hero" id="iResultHero">
+          <div class="big-score" style="opacity:0.4;">
+            <div class="big-score-value">??<small>/ 100</small></div>
+          </div>
+          <div>
+            <h3>${L('Latihan Wawancara Selesai 🎉', 'Practice Interview Complete 🎉')}</h3>
+            <p class="muted" style="margin:0">${answeredCount} ${L('dari', 'of')} ${totalQ} ${L('pertanyaan terjawab', 'questions answered')} • ${el('iTimer').textContent} ${L('total', 'total')}</p>
+          </div>
+        </div>
+
+        <div class="analysis-block" style="border:1px solid #fcd34d; background:linear-gradient(135deg,#fef3c7,#fef2f2); border-radius:14px; padding:24px; text-align:center; margin-top:20px;">
+          <div style="font-size:2.4rem; margin-bottom:6px;">🔒</div>
+          <h3 style="margin:0 0 8px;">${L('Hasil Penilaian Khusus Akun Pro', 'Detailed Scoring is Pro-Only')}</h3>
+          <p class="muted" style="max-width:520px; margin:0 auto 14px;">
+            ${L(
+              'Maaf, karena kami menggunakan AI model yang mahal untuk menilai jawaban Anda secara mendalam (skor per aspek, kekuatan, kelemahan, dan saran konkret per pertanyaan), fitur penilaian hanya tersedia untuk akun Pro.',
+              'Sorry — because we use an expensive AI model to deeply evaluate your answers (per-aspect scoring, strengths, weaknesses, and concrete per-question feedback), detailed results are only available for Pro accounts.'
+            )}
+          </p>
+          <p class="muted" style="margin:0 0 16px; font-size:0.9rem;">
+            ${L('Akun Free tetap bisa berlatih wawancara tanpa batas — penilaian terbuka setelah upgrade.', 'Free accounts can keep practicing the interview unlimited — scoring unlocks after upgrade.')}
+          </p>
+          <a href="pricing.html" class="btn btn-primary">🔓 ${L('Upgrade ke Pro', 'Upgrade to Pro')}</a>
+        </div>
+
+        <div style="display:flex; gap:12px; margin-top:20px; flex-wrap:wrap;">
+          <button class="btn btn-primary" id="iRetry">${L('Ulang Wawancara', 'Retry Interview')}</button>
+        </div>
+      `;
+      // Re-bind retry (since we rebuilt the DOM)
+      el('iRetry').addEventListener('click', retryInterview);
+
+      // Save a minimal session record (no AI evaluation since we didn't call it)
+      App.saveInterviewSessionToDb({
+        essayExcerpt: state.essay.slice(0, 500),
+        questions: state.questions,
+        answers: state.answers,
+        overall: null,
+        evaluation: { gated: true, language: state.shortLang },
+      });
+      return;
+    }
+    // ---------- Pro tier: full AI evaluation flow ----------
+    el('iResultHero').innerHTML = `
+      <div class="big-score" style="opacity:0.5;">
+        <div class="big-score-value">--<small>/ 100</small></div>
+      </div>
+      <div>
+        <h3>${L('AI sedang menilai jawaban Anda...', 'AI is evaluating your answers...')}</h3>
+        <p class="muted" style="margin:0">${L('Membandingkan jawaban Anda dengan klaim di essay dan standar awardee LPDP.', 'Comparing your answers against essay claims and LPDP awardee standards.')}</p>
+        <div class="fb-spinner" style="margin-top:14px;"></div>
+      </div>
+    `;
+    el('iMetrics').innerHTML = '';
+    el('iStrengths').innerHTML = '<li class="muted"><em>' + L('Memuat...', 'Loading...') + '</em></li>';
+    el('iWeaknesses').innerHTML = '<li class="muted"><em>' + L('Memuat...', 'Loading...') + '</em></li>';
+    el('iSuggestions').innerHTML = '<li class="muted"><em>' + L('Memuat...', 'Loading...') + '</em></li>';
+    el('iReviewList').innerHTML = '';
+
+    const qa = state.questions.map((q, i) => ({
+      q: q.q, focus: q.focus, answer: (state.answers[i] || '').trim(),
+    }));
+
+    // Try AI evaluation
+    const aiResult = await App.evaluateInterview({
+      essay: state.essay,
+      language: state.shortLang,
+      qa,
+    });
+    const aiOk = aiResult.ok && aiResult.evaluation;
+    const aiEval = aiOk ? aiResult.evaluation : null;
+    const aiPerQ = aiOk && Array.isArray(aiEval.per_question) ? aiEval.per_question : [];
+
+    // Build per-question evaluations: prefer AI, fall back to heuristic
+    const evals = state.questions.map((q, i) => {
+      const ans = state.answers[i] || '';
+      const heur = evaluateAnswer(q, ans);
+      const ai = aiPerQ[i];
+      if (ai && typeof ai.score === 'number') {
+        return {
+          q, ans,
+          eval: {
+            score: Math.max(0, Math.min(100, Math.round(ai.score))),
+            notes: Array.isArray(ai.notes) ? ai.notes.filter(Boolean).slice(0, 5) : heur.notes,
+            feedback: typeof ai.feedback === 'string' ? ai.feedback : '',
+            words: heur.words,
+          }
+        };
+      }
+      return { q, ans, eval: { ...heur, feedback: '' } };
+    });
+
+    const answered = evals.filter(e => e.ans && e.ans.trim().length > 20);
+
+    // Aggregate — use AI numbers if available, else compute from heuristics
+    let overall, focusScores, strengths, weaknesses, suggestions, summary;
+    if (aiOk) {
+      overall = Math.max(0, Math.min(100, Math.round(aiEval.overall || 0)));
+      focusScores = (aiEval.focus_scores && typeof aiEval.focus_scores === 'object') ? aiEval.focus_scores : {};
+      strengths = Array.isArray(aiEval.strengths) ? aiEval.strengths.filter(Boolean) : [];
+      weaknesses = Array.isArray(aiEval.weaknesses) ? aiEval.weaknesses.filter(Boolean) : [];
+      suggestions = Array.isArray(aiEval.suggestions) ? aiEval.suggestions.filter(Boolean) : [];
+      summary = aiEval.summary || '';
+    } else {
+      console.warn('AI eval failed, falling back to heuristic:', aiResult.error);
+      overall = answered.length
+        ? Math.round(answered.reduce((s, e) => s + e.eval.score, 0) / answered.length)
+        : 0;
+      const byFocus = {};
+      evals.forEach(e => {
+        const k = e.q.focus;
+        if (!byFocus[k]) byFocus[k] = { total: 0, count: 0 };
+        byFocus[k].total += e.eval.score;
+        byFocus[k].count++;
+      });
+      focusScores = {};
+      Object.keys(byFocus).forEach(k => focusScores[k] = Math.round(byFocus[k].total / byFocus[k].count));
+      strengths = []; weaknesses = []; suggestions = [];
+      if (overall >= 75) strengths.push(L('Jawaban secara keseluruhan solid, jelas, dan percaya diri.', 'Answers are solid, clear, and confident overall.'));
+      if (answered.length === evals.length) strengths.push(L('Menjawab semua pertanyaan — menunjukkan persiapan yang matang.', 'Answered every question — shows strong preparation.'));
+      if (evals.some(e => /\b\d+/.test(e.ans || ''))) strengths.push(L('Menyertakan data/angka untuk memperkuat argumen.', 'Used data / numbers to back up arguments.'));
+      if (strengths.length === 0) strengths.push(L('Upaya menjawab sudah ada — fokus untuk memperkuat substansi.', 'You made an effort — now focus on strengthening the substance.'));
+      if (answered.length < evals.length) weaknesses.push((evals.length - answered.length) + (isEn ? ' question(s) were unanswered or too brief.' : ' pertanyaan tidak terjawab atau terlalu pendek.'));
+      if (focusScores.Impact && focusScores.Impact < 65) weaknesses.push(L('Aspek dampak/kontribusi perlu dipertajam dengan contoh konkret.', 'The impact / contribution dimension needs sharper concrete examples.'));
+      if (focusScores.Confidence && focusScores.Confidence < 65) weaknesses.push(L('Tingkat keyakinan dalam jawaban perlu ditingkatkan.', 'Confidence level in your answers needs to be raised.'));
+      if (weaknesses.length === 0) weaknesses.push(L('Tidak ada kelemahan besar — polish jawaban dengan detail tambahan.', 'No major weaknesses — polish answers with extra detail.'));
+      const allNotes = evals.flatMap(e => e.eval.notes);
+      const noteCount = {};
+      allNotes.forEach(n => noteCount[n] = (noteCount[n] || 0) + 1);
+      Object.entries(noteCount).sort((a, b) => b[1] - a[1]).slice(0, 5).forEach(x => suggestions.push(x[0]));
+      if (suggestions.length < 3) suggestions.push(L('Latih pengucapan di depan cermin atau rekam diri sendiri untuk mengevaluasi intonasi.', 'Practice out loud in front of a mirror or record yourself to evaluate tone and pacing.'));
+      if (suggestions.length < 4) suggestions.push(L('Siapkan 2–3 cerita STAR (Situation, Task, Action, Result) untuk dipakai di beberapa pertanyaan.', 'Prepare 2–3 STAR stories (Situation, Task, Action, Result) you can reuse across questions.'));
+    }
+
+    const readinessTitle = aiOk && aiEval.readiness_label
+      ? aiEval.readiness_label
+      : (overall >= 80 ? L('Sangat Siap', 'Very Ready')
+        : overall >= 65 ? L('Cukup Siap', 'Fairly Ready')
+        : overall >= 50 ? L('Perlu Latihan Lagi', 'Needs More Practice')
+        : L('Butuh Persiapan Lebih Matang', 'Needs Much More Preparation'));
+    const readinessSub = summary || (overall >= 80
       ? L('Siap melangkah ke wawancara sesungguhnya.', 'Ready to move on to the real interview.')
       : overall >= 65
         ? L('Dasar sudah baik — pertajam substansi dan percaya diri.', 'Foundation is good — sharpen substance and confidence.')
-        : L('Latih beberapa kali lagi untuk memperkuat jawabanmu.', 'Practice a few more times to strengthen your answers.');
+        : L('Latih beberapa kali lagi untuk memperkuat jawabanmu.', 'Practice a few more times to strengthen your answers.'));
     const answeredLine = L(
       `${answered.length} dari ${evals.length} pertanyaan terjawab • ${el('iTimer').textContent} total`,
       `${answered.length} of ${evals.length} questions answered • ${el('iTimer').textContent} total`
     );
-
     const hero = el('iResultHero');
     hero.style.setProperty('--pct', overall + '%');
     hero.innerHTML = `
@@ -1086,9 +1047,9 @@
         <div class="big-score-value">${overall}<small>/ 100</small></div>
       </div>
       <div>
-        <h3>${readinessTitle}</h3>
+        <h3>${escapeHtml(readinessTitle)}</h3>
         <p class="muted" style="margin:0">${answeredLine}</p>
-        <p style="margin-top:8px;">${readinessSub}</p>
+        <p style="margin-top:8px;">${escapeHtml(readinessSub)}</p>
       </div>
     `;
 
@@ -1099,9 +1060,15 @@
       </div>`
     ).join('');
 
-    el('iStrengths').innerHTML = strengths.map(s => `<li>${escapeHtml(s)}</li>`).join('');
-    el('iWeaknesses').innerHTML = weaknesses.map(s => `<li>${escapeHtml(s)}</li>`).join('');
-    el('iSuggestions').innerHTML = suggestions.map(s => `<li>${escapeHtml(s)}</li>`).join('');
+    el('iStrengths').innerHTML = strengths.length
+      ? strengths.map(s => `<li>${escapeHtml(s)}</li>`).join('')
+      : `<li class="muted"><em>${L('—', '—')}</em></li>`;
+    el('iWeaknesses').innerHTML = weaknesses.length
+      ? weaknesses.map(s => `<li>${escapeHtml(s)}</li>`).join('')
+      : `<li class="muted"><em>${L('—', '—')}</em></li>`;
+    el('iSuggestions').innerHTML = suggestions.length
+      ? suggestions.map(s => `<li>${escapeHtml(s)}</li>`).join('')
+      : `<li class="muted"><em>${L('—', '—')}</em></li>`;
 
     // Persist to DB if logged in
     App.saveInterviewSessionToDb({
@@ -1109,7 +1076,7 @@
       questions: state.questions,
       answers: state.answers,
       overall,
-      evaluation: { focusScores, strengths, weaknesses, suggestions, language: state.shortLang },
+      evaluation: { focusScores, strengths, weaknesses, suggestions, summary, aiUsed: aiOk, language: state.shortLang },
     });
 
     const reviewLabels = {
@@ -1119,17 +1086,20 @@
       notAnswered: L('(tidak dijawab)', '(not answered)'),
       audio: L('Rekaman suara', 'Audio recording'),
       notes: L('Catatan', 'Notes'),
+      feedback: L('Feedback AI', 'AI feedback'),
     };
 
     el('iReviewList').innerHTML = evals.map((e, i) => {
       const audioUrl = state.audioBlobs[i];
+      const fb = e.eval.feedback;
       return `
       <div class="paragraph-card">
         <h5>${reviewLabels.question} ${i+1} <small class="muted">• ${focusLabel(e.q.focus)} • ${reviewLabels.score} ${e.eval.score}/100</small></h5>
         <div class="quote">${escapeHtml(e.q.q)}</div>
         <div class="note"><strong>${reviewLabels.answer}:</strong> ${e.ans ? escapeHtml(e.ans) : `<em>${reviewLabels.notAnswered}</em>`}</div>
         ${audioUrl ? `<div style="margin-top:10px;"><small class="muted">${reviewLabels.audio}:</small><br><audio controls src="${audioUrl}" style="width:100%; margin-top:4px;"></audio></div>` : ''}
-        ${e.eval.notes.length ? `<div class="explanation" style="margin-top:10px;"><strong>${reviewLabels.notes}:</strong> ${e.eval.notes.map(escapeHtml).join(' • ')}</div>` : ''}
+        ${fb ? `<div class="explanation" style="margin-top:10px;"><strong>${reviewLabels.feedback}:</strong> ${escapeHtml(fb)}</div>` : ''}
+        ${e.eval.notes && e.eval.notes.length ? `<div class="explanation" style="margin-top:10px;"><strong>${reviewLabels.notes}:</strong> ${e.eval.notes.map(escapeHtml).join(' • ')}</div>` : ''}
       </div>
       `;
     }).join('');
@@ -1157,7 +1127,7 @@
   // Backwards-compat alias (in case referenced elsewhere)
   const focusLabelID = focusLabel;
 
-  el('iRetry').addEventListener('click', () => {
+  function retryInterview() {
     // Clean up any existing audio blob URLs
     state.audioBlobs.forEach(u => { if (u) URL.revokeObjectURL(u); });
     state.audioBlobs = [];
@@ -1167,11 +1137,12 @@
     stopMediaStream();
     el('cameraPip').classList.add('hidden');
     el('interviewStage').classList.remove('paused');
-    el('iPauseBtn').textContent = state.shortLang === 'en' ? '⏸ Pause' : '⏸ Jeda';
+    if (el('iPauseBtn')) el('iPauseBtn').textContent = state.shortLang === 'en' ? '⏸ Pause' : '⏸ Jeda';
     el('resultStage').classList.add('hidden');
     el('essayStage').classList.remove('hidden');
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  });
+  }
+  el('iRetry').addEventListener('click', retryInterview);
 
   // Release camera/mic if user navigates away
   window.addEventListener('beforeunload', () => {

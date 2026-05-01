@@ -1,5 +1,5 @@
 -- ============================================================================
--- LPDP Prep — Supabase schema
+-- SIAP Studi — Supabase schema
 -- How to apply:
 --   1. Create a project at https://supabase.com (free tier is fine)
 --   2. In the dashboard: SQL Editor → New Query → paste this file → Run

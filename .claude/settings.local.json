@@ -13,7 +13,8 @@
       "Bash(node -e 'const fs = require\\(\"fs\"\\); const vm = require\\(\"vm\"\\); const code = fs.readFileSync\\(\"js/tbs-bank.js\", \"utf8\"\\); const ctx = { window: {}, console }; vm.createContext\\(ctx\\); vm.runInContext\\(code, ctx\\); const b = ctx.window.TBS_BANK; let bad = 0; for \\(const cat of [\"verbal\",\"numerik\",\"logika\"]\\) { b[cat].forEach\\(\\(q, i\\) => { if \\(!q.q || !Array.isArray\\(q.opts\\) || q.opts.length < 2 || typeof q.a !== \"number\" || q.a < 0 || q.a >= q.opts.length || !q.exp\\) { console.log\\(\"BAD\", cat, i\\); bad++; } }\\); } console.log\\(\"bad:\", bad\\);')",
       "Bash(node -e 'const fs=require\\(\"fs\"\\); const vm=require\\(\"vm\"\\); const code=fs.readFileSync\\(\"js/tbs-bank.js\",\"utf8\"\\); const ctx={window:{},console}; vm.createContext\\(ctx\\); vm.runInContext\\(code,ctx\\); const b=ctx.window.TBS_BANK; console.log\\(\"verbal:\",b.verbal.length,\"numerik:\",b.numerik.length,\"logika:\",b.logika.length\\);')",
       "Read(//d/d/claude project/Essay Reviewer/supabase/**)",
-      "Bash(node --check js/tbs.js)"
+      "Bash(node --check js/tbs.js)",
+      "WebFetch(domain:visionvix.com)"
     ]
   }
 }

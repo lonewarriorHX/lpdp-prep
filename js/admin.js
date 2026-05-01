@@ -22,14 +22,76 @@
       await new Promise(r => setTimeout(r, 100));
       tries++;
     }
+    el('loadingState').classList.add('hidden');
     if (!App.currentUser) {
-      el('loadingState').classList.add('hidden');
       el('loginPrompt').classList.remove('hidden');
       return;
     }
-    el('loadingState').classList.add('hidden');
-    el('adminView').classList.remove('hidden');
+    // Pull a fresh profile snapshot so newly-approved alumni see the right gate.
+    if (typeof App._refreshProStatus === 'function') {
+      await App._refreshProStatus();
+    }
+    if (!App.getIsAlumni || !App.getIsAlumni()) {
+      renderAlumniGate();
+      return;
+    }
+    showAdmin();
     await refreshList();
+    if (typeof refreshQuestionList === 'function') await refreshQuestionList();
+  }
+
+  function showAdmin() {
+    el('adminView').classList.remove('hidden');
+    const promo = el('alumniPromoCodeDisplay');
+    if (promo) promo.textContent = App.alumniPromoCode || 'belum ditetapkan';
+  }
+
+  function renderAlumniGate() {
+    const gate = el('alumniGate');
+    const noneEl = el('alumniGateNone');
+    const pendingEl = el('alumniGatePending');
+    const rejectedEl = el('alumniGateRejected');
+    if (!gate || !noneEl || !pendingEl || !rejectedEl) return;
+    gate.classList.remove('hidden');
+    noneEl.classList.add('hidden');
+    pendingEl.classList.add('hidden');
+    rejectedEl.classList.add('hidden');
+
+    const status = App.getAlumniStatus ? App.getAlumniStatus() : 'none';
+    if (status === 'pending') {
+      pendingEl.classList.remove('hidden');
+      const u = el('alumniSubmittedUni');
+      const y = el('alumniSubmittedYear');
+      if (u) u.textContent = App.alumniUniversity || '—';
+      if (y) y.textContent = App.alumniYear || '—';
+    } else if (status === 'rejected') {
+      rejectedEl.classList.remove('hidden');
+    } else {
+      noneEl.classList.remove('hidden');
+    }
+  }
+
+  async function submitAlumniRequest() {
+    const btn = el('submitAlumniReqBtn');
+    const alertEl = el('alumniReqAlert');
+    const university = el('alumniUniversity').value.trim();
+    const year = el('alumniYear').value.trim();
+    const notes = el('alumniNotes').value.trim();
+    if (!university || !notes) {
+      alertEl.innerHTML = '<div class="alert alert-warning">Harap isi minimal universitas dan catatan verifikasi.</div>';
+      return;
+    }
+    btn.disabled = true;
+    btn.textContent = 'Mengirim...';
+    const res = await App.submitAlumniRequest({ university, year, notes });
+    btn.disabled = false;
+    btn.textContent = 'Kirim Permintaan Verifikasi';
+    if (!res.ok) {
+      alertEl.innerHTML = `<div class="alert alert-error">${res.error || 'Gagal mengirim permintaan.'}</div>`;
+      return;
+    }
+    alertEl.innerHTML = '';
+    renderAlumniGate();
   }
 
   async function refreshList() {
@@ -236,6 +298,9 @@
     el('rqTags').value = '';
     await refreshQuestionList();
   });
+
+  const submitBtn = el('submitAlumniReqBtn');
+  if (submitBtn) submitBtn.addEventListener('click', submitAlumniRequest);
 
   boot();
 })();

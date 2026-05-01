@@ -1,5 +1,5 @@
 -- ============================================================================
--- LPDP Prep — Universities table + seed data
+-- SIAP Studi — Universities table + seed data
 -- Run this AFTER schema.sql. In Supabase dashboard: SQL Editor → paste → Run.
 -- ============================================================================
 

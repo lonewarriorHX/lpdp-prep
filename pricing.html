@@ -3,15 +3,15 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Upgrade ke Pro — LPDP Prep</title>
+<title>Upgrade ke Pro — SIAP Studi</title>
 <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
 <header class="site-header">
   <div class="container nav">
     <a href="index.html" class="brand">
-      <span class="brand-mark">LP</span>
-      <span class="brand-text">LPDP Prep</span>
+      <img src="images/logo.png" alt="SIAP Studi" class="brand-mark" />
+      <span class="brand-text">SIAP Studi</span>
     </a>
     <nav class="nav-links" id="navLinks">
       <a href="index.html">Beranda</a>
@@ -19,7 +19,6 @@
       <a href="tbs.html">TBS Practice</a>
       <a href="interview.html">Interview</a>
       <a href="history.html">Riwayat</a>
-      <a href="pricing.html" class="active">Upgrade</a>
       <a href="login.html" class="btn btn-ghost" id="authLink">Masuk</a>
     </nav>
     <button class="nav-toggle" id="navToggle" aria-label="Toggle menu">
@@ -32,7 +31,8 @@
   <div class="container" style="text-align:center;">
     <span class="eyebrow">Pricing</span>
     <h1>Buka Analisis Mendalam</h1>
-    <p>Akun gratis dapat skor + cakupan 3 aspek + skor kemiripan. Akun Pro buka semua: feedback AI komparatif, kekuatan & kelemahan rinci, saran perbaikan, analisis per paragraf, dan daftar essay awardee paling mirip.</p>
+    <p style="text-align:center; max-width:780px; margin:0 auto;">Akun Free: 3 analisis essay/hari + simulasi wawancara tanpa batas (tanpa hasil penilaian). Akun Pro: 10 analisis essay/hari + hasil penilaian wawancara penuh + feedback AI komparatif + analisis per paragraf + daftar essay awardee paling mirip.</p>
+    <p style="text-align:center; max-width:680px; margin:8px auto 0; font-size:0.85rem; color: var(--ink-700);">Maaf, karena kami menggunakan AI model yang mahal untuk meningkatkan akurasi analisis, kami harus membatasi pemakaian harian.</p>
   </div>
 </section>
 
@@ -53,7 +53,7 @@
 
     <div id="pricingView" class="hidden">
 
-      <div class="pricing-grid">
+      <div class="pricing-grid pricing-grid-3">
         <!-- Free plan -->
         <div class="pricing-card">
           <div class="pricing-head">
@@ -65,11 +65,14 @@
             <span class="pricing-period">selamanya</span>
           </div>
           <ul class="pricing-features">
+            <li>✓ <strong>3 analisis essay/hari</strong></li>
             <li>✓ Skor essay 0–100</li>
             <li>✓ Cakupan 3 aspek wajib (motivasi, kontribusi, rencana)</li>
             <li>✓ Skor kemiripan dengan essay LPDP lolos</li>
+            <li>✓ Simulasi wawancara AI <em>tanpa batas</em></li>
             <li>✓ TBS Practice tanpa batas</li>
             <li>✓ Riwayat analisis</li>
+            <li class="muted">✗ Hasil penilaian wawancara (skor & feedback per pertanyaan)</li>
             <li class="muted">✗ Feedback komparatif AI vs awardee</li>
             <li class="muted">✗ Kekuatan, kelemahan, saran perbaikan rinci</li>
             <li class="muted">✗ Analisis per paragraf</li>
@@ -78,19 +81,28 @@
           <button class="btn btn-ghost btn-block" disabled>Plan Anda Saat Ini</button>
         </div>
 
-        <!-- Pro plan -->
-        <div class="pricing-card pricing-card--featured">
+        <!-- Pro Early Bird (Promo) plan -->
+        <div class="pricing-card pricing-card--featured" id="promoCard">
           <span class="pricing-ribbon">PROMO PEMBUKAAN</span>
           <div class="pricing-head">
-            <h3 style="margin:0">Pro <span class="pro-tag">PRO</span></h3>
-            <p class="muted" style="margin:4px 0 0">Akses penuh selama 1 tahun</p>
+            <h3 style="margin:0">Pro Early Bird <span class="pro-tag">PRO</span></h3>
+            <p class="muted" style="margin:4px 0 0">100 user pertama saja</p>
           </div>
           <div class="pricing-price">
-            <span class="pricing-amount" id="proAmount">Rp 39.000</span>
+            <span class="pricing-amount" id="proAmount">Rp 49.900</span>
             <span class="pricing-period">/tahun</span>
+          </div>
+          <div class="promo-counter" id="promoCounter">
+            <div class="promo-counter-head">
+              <span><strong id="promoUsed">—</strong> / 100 spot terpakai</span>
+              <span class="muted" id="promoRemaining">— tersisa</span>
+            </div>
+            <div class="promo-counter-bar"><span id="promoCounterFill" style="width:0%"></span></div>
           </div>
           <ul class="pricing-features">
             <li>✓ Semua fitur Free</li>
+            <li>✓ <strong>10 analisis essay/hari</strong> (vs 3 di Free)</li>
+            <li>✓ <strong>Hasil penilaian wawancara penuh</strong> (skor, kekuatan, kelemahan, feedback per pertanyaan)</li>
             <li>✓ <strong>Feedback komparatif AI</strong> per aspek vs awardee LPDP</li>
             <li>✓ Kekuatan, kelemahan, dan saran perbaikan konkret</li>
             <li>✓ Analisis tiap paragraf</li>
@@ -102,6 +114,64 @@
           <p class="muted" style="font-size:0.75rem; text-align:center; margin-top:10px;">
             Pembayaran aman via Midtrans. GoPay, OVO, DANA, ShopeePay, QRIS, Transfer Bank, Kartu Kredit.
           </p>
+        </div>
+
+        <!-- Pro Reguler plan (informational while promo active) -->
+        <div class="pricing-card pricing-card--regular" id="regularCard">
+          <div class="pricing-head">
+            <h3 style="margin:0">Pro Reguler <span class="pro-tag">PRO</span></h3>
+            <p class="muted" style="margin:4px 0 0">Setelah promo Early Bird berakhir</p>
+          </div>
+          <div class="pricing-price">
+            <span class="pricing-amount">Rp 199.000</span>
+            <span class="pricing-period">/tahun</span>
+          </div>
+          <ul class="pricing-features">
+            <li>✓ Semua fitur Pro Early Bird</li>
+            <li>✓ 10 analisis essay/hari</li>
+            <li>✓ Hasil penilaian wawancara penuh</li>
+            <li class="muted">— Hemat <strong>Rp 49.100</strong> dengan ambil Early Bird</li>
+          </ul>
+          <button class="btn btn-ghost btn-block" id="regularBtn" disabled>Tersedia Setelah Promo Berakhir</button>
+          <p class="muted" style="font-size:0.75rem; text-align:center; margin-top:10px;">
+            Selama Early Bird masih ada slot, paket inilah harga termurahnya.
+          </p>
+        </div>
+      </div>
+
+      <!-- Checkout summary (shown after clicking Upgrade) -->
+      <div id="checkoutPanel" class="panel hidden" style="margin-top:24px;">
+        <h3 style="margin-top:0">Konfirmasi Pembayaran</h3>
+        <div class="checkout-row">
+          <span>Pro Early Bird (1 tahun)</span>
+          <span id="coSubtotal">Rp 49.900</span>
+        </div>
+        <div class="checkout-row">
+          <span class="muted">Biaya transaksi Midtrans</span>
+          <span class="muted" id="coFee">+ Rp 2.500</span>
+        </div>
+        <div class="checkout-row checkout-row-discount hidden" id="coDiscountRow">
+          <span style="color: var(--green-600)">Diskon kode <strong id="coCouponLabel">—</strong></span>
+          <span style="color: var(--green-600)" id="coDiscount">– Rp 0</span>
+        </div>
+
+        <div class="checkout-coupon">
+          <label for="couponInput" style="font-size:0.9rem; font-weight:600;">Kode Promo (opsional)</label>
+          <div class="checkout-coupon-row">
+            <input type="text" id="couponInput" placeholder="Masukkan kode promo" autocomplete="off" />
+            <button class="btn btn-ghost btn-sm" id="applyCouponBtn" type="button">Pakai</button>
+          </div>
+          <div id="couponMsg" class="muted" style="margin-top:6px; font-size:0.85rem;"></div>
+        </div>
+
+        <div class="checkout-row checkout-row-total">
+          <span>Total</span>
+          <span id="coTotal">Rp 52.400</span>
+        </div>
+
+        <div style="display:flex; gap:12px; margin-top:16px; flex-wrap:wrap;">
+          <button class="btn btn-primary" id="confirmPayBtn" type="button">Bayar via Midtrans</button>
+          <button class="btn btn-ghost" id="cancelCheckoutBtn" type="button">Batal</button>
         </div>
       </div>
 
@@ -119,7 +189,7 @@
         </details>
         <details>
           <summary><strong>Apakah harga akan naik?</strong></summary>
-          <p class="muted">Ya. Harga Rp 39.000/tahun adalah harga promo pembukaan untuk early adopter. Setelah promo berakhir, harga akan disesuaikan.</p>
+          <p class="muted">Ya. Harga Rp 49.900/tahun adalah harga promo pembukaan Early Bird untuk 100 user pertama. Setelah promo berakhir, harga normal Rp 99.000/tahun akan berlaku.</p>
         </details>
         <details>
           <summary><strong>Apakah saya bisa renew?</strong></summary>
@@ -137,7 +207,7 @@
 </section>
 
 <footer class="site-footer">
-  <div class="container copyright">© 2026 LPDP Prep.</div>
+  <div class="container copyright">© 2026 SIAP Studi.</div>
 </footer>
 
 <!-- Midtrans Snap.js — replace SB-Mid-client-XXXXX with your client key -->
@@ -148,5 +218,7 @@
 <script src="js/supabase-client.js"></script>
 <script src="js/app.js"></script>
 <script src="js/pricing.js"></script>
+<!-- Vercel Speed Insights (auto-injected when deployed to Vercel; no-op locally) -->
+<script defer src="/_vercel/speed-insights/script.js"></script>
 </body>
 </html>

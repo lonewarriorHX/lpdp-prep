@@ -16,7 +16,7 @@ and only used server-side.
 3. Copy the key — you'll paste it in step 3 below
 
 The Gemini 2.5 Flash free tier is generous (currently ~1500 requests/day),
-which is way more than enough for an LPDP prep app.
+which is way more than enough for an SIAP Studi app.
 
 ## 2. Install Supabase CLI (one-time)
 

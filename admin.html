@@ -3,15 +3,15 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Training Data — LPDP Prep</title>
+<title>Training Data — SIAP Studi</title>
 <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
 <header class="site-header">
   <div class="container nav">
     <a href="index.html" class="brand">
-      <span class="brand-mark">LP</span>
-      <span class="brand-text">LPDP Prep</span>
+      <img src="images/logo.png" alt="SIAP Studi" class="brand-mark" />
+      <span class="brand-text">SIAP Studi</span>
     </a>
     <nav class="nav-links" id="navLinks">
       <a href="index.html">Beranda</a>
@@ -19,8 +19,6 @@
       <a href="tbs.html">TBS Practice</a>
       <a href="interview.html">Interview</a>
       <a href="history.html">Riwayat</a>
-      <a href="admin.html" class="active">Training Data</a>
-      <a href="pricing.html">Upgrade</a>
       <a href="login.html" class="btn btn-ghost" id="authLink">Masuk</a>
     </nav>
     <button class="nav-toggle" id="navToggle" aria-label="Toggle menu">
@@ -41,12 +39,59 @@
   <div class="container">
 
     <div id="loginPrompt" class="panel hidden" style="text-align:center; padding:48px;">
-      <h3>Masuk untuk Menambah Data</h3>
-      <p class="muted">Hanya user yang login yang bisa menambah data referensi.</p>
+      <h3>Masuk untuk Mengakses Halaman Kontributor</h3>
+      <p class="muted">Halaman ini hanya untuk Alumni LPDP yang sudah terverifikasi. Silakan login terlebih dahulu.</p>
       <a href="login.html" class="btn btn-primary">Masuk</a>
     </div>
 
+    <div id="alumniGate" class="panel hidden" style="padding:40px;">
+      <div id="alumniGateNone">
+        <span class="eyebrow">Verifikasi Alumni</span>
+        <h3 style="margin-bottom:8px;">Daftar sebagai Alumni Kontributor</h3>
+        <p class="muted">Halaman ini khusus untuk awardee LPDP yang sudah lolos seleksi. Untuk mengakses, lengkapi data berikut. Tim kami akan memverifikasi manual dalam 1–3 hari kerja. Setelah disetujui, Anda akan mendapatkan kode promo personal &amp; hak akses untuk mengunggah essay referensi.</p>
+
+        <div class="form-row">
+          <div class="field">
+            <label for="alumniUniversity">Universitas Tujuan</label>
+            <input type="text" id="alumniUniversity" placeholder="Contoh: TU Delft, UI, Oxford" />
+          </div>
+          <div class="field">
+            <label for="alumniYear">Tahun Awardee</label>
+            <input type="text" id="alumniYear" placeholder="Contoh: 2023" />
+          </div>
+        </div>
+        <div class="field">
+          <label for="alumniNotes">Bukti / Catatan Verifikasi</label>
+          <textarea id="alumniNotes" placeholder="Sebutkan jenjang (S1/S2/S3), batch LPDP, jurusan, dan link bukti yang bisa diverifikasi (mis. LinkedIn, screenshot LoG/LoA, atau referensi awardee senior)."></textarea>
+        </div>
+        <div id="alumniReqAlert"></div>
+        <button class="btn btn-primary" id="submitAlumniReqBtn">Kirim Permintaan Verifikasi</button>
+      </div>
+
+      <div id="alumniGatePending" class="hidden" style="text-align:center;">
+        <div style="font-size:2.4rem; margin-bottom:8px;">⏳</div>
+        <h3>Permintaan Sedang Ditinjau</h3>
+        <p class="muted">Permintaan Anda sudah kami terima dan sedang diverifikasi (1–3 hari kerja). Anda akan dapat email saat sudah disetujui.</p>
+        <p class="muted" style="font-size:0.85rem;">Universitas: <strong id="alumniSubmittedUni">—</strong> · Tahun: <strong id="alumniSubmittedYear">—</strong></p>
+      </div>
+
+      <div id="alumniGateRejected" class="hidden" style="text-align:center;">
+        <div style="font-size:2.4rem; margin-bottom:8px;">📩</div>
+        <h3>Permintaan Belum Bisa Diverifikasi</h3>
+        <p class="muted">Permintaan sebelumnya tidak dapat kami verifikasi. Silakan hubungi <strong>support@lpdpprep.id</strong> dengan bukti tambahan.</p>
+      </div>
+    </div>
+
     <div id="adminView" class="hidden">
+      <div id="alumniWelcome" class="panel" style="padding:24px 28px; margin-bottom:20px; background: linear-gradient(135deg, var(--blue-50), #fff); border-color: var(--blue-100);">
+        <div style="display:flex; gap:16px; align-items:center; flex-wrap:wrap; justify-content:space-between;">
+          <div>
+            <div style="font-size:0.78rem; font-weight:700; letter-spacing:0.06em; color:var(--blue-700); text-transform:uppercase; margin-bottom:4px;">Alumni Kontributor Terverifikasi ✓</div>
+            <h3 style="margin:0;">Kode Promo Anda: <span id="alumniPromoCodeDisplay" style="color:var(--blue-700); font-family:monospace; background:var(--blue-50); padding:2px 10px; border-radius:6px;">—</span></h3>
+            <p class="muted" style="margin:6px 0 0; font-size:0.9rem;">Bagikan kode ini ke kolega untuk diskon 10%. Anda dapat 10% komisi tiap pembelian Pro yang memakai kode ini.</p>
+          </div>
+        </div>
+      </div>
 
       <div class="admin-tabs">
         <button class="admin-tab active" data-tab="essays" type="button">Essay Referensi</button>
@@ -199,7 +244,7 @@
 </section>
 
 <footer class="site-footer">
-  <div class="container copyright">© 2026 LPDP Prep.</div>
+  <div class="container copyright">© 2026 SIAP Studi.</div>
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -207,5 +252,7 @@
 <script src="js/supabase-client.js"></script>
 <script src="js/app.js"></script>
 <script src="js/admin.js"></script>
+<!-- Vercel Speed Insights (auto-injected when deployed to Vercel; no-op locally) -->
+<script defer src="/_vercel/speed-insights/script.js"></script>
 </body>
 </html>

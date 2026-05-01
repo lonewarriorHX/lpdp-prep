@@ -1,5 +1,5 @@
 -- ============================================================================
--- LPDP Prep — Reference (winning) essays for similarity training
+-- SIAP Studi — Reference (winning) essays for similarity training
 -- Run this AFTER schema.sql and universities.sql.
 -- ============================================================================
 

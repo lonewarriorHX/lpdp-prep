@@ -22,6 +22,14 @@
     if (s >= 60) return 'tag-tip';
     return 'tag-weak';
   }
+  function getSimilarityScore(analysis) {
+    if (!analysis) return null;
+    const aiSim = analysis.awardeeFeedback?.similarity;
+    if (aiSim && typeof aiSim.score === 'number') return Math.round(aiSim.score);
+    const sim = analysis.similarity;
+    if (sim && sim.available && typeof sim.score === 'number') return Math.round(sim.score);
+    return null;
+  }
   function capitalize(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : ''; }
 
   // Wait for auth to init before rendering
@@ -80,7 +88,9 @@
       return;
     }
     wrap.innerHTML = items.map((it, i) => {
-      const score = it.overall_score ?? 0;
+      const simScore = getSimilarityScore(it.analysis);
+      const scoreLabel = simScore == null ? '—' : simScore + '%';
+      const scoreCls = simScore == null ? 'tag-tip' : scoreColor(simScore);
       const titleBits = [];
       if (it.degree_level) titleBits.push(it.degree_level.toUpperCase());
       if (it.university_name) titleBits.push(it.university_name);
@@ -96,7 +106,7 @@
               <small class="muted">${fmtDate(it.created_at)} ${coverageBadge}</small>
             </div>
             <div style="display:flex; align-items:center; gap:10px;">
-              <span class="tag ${scoreColor(score)}" style="font-size:0.85rem; padding:4px 10px;">${score}/100</span>
+              <span class="tag ${scoreCls}" style="font-size:0.85rem; padding:4px 10px;" title="Kemiripan dengan essay lolos">${scoreLabel}</span>
               <button class="btn btn-ghost btn-sm" data-action="toggleEssay" data-idx="${i}" style="padding:6px 12px; font-size:0.85rem;">Detail</button>
               <button class="btn btn-ghost btn-sm" data-action="deleteEssay" data-id="${it.id}" style="padding:6px 12px; font-size:0.85rem; color:var(--red-500);">Hapus</button>
             </div>
@@ -179,6 +189,8 @@
           </div>
         `).join('')}
       </div>
+      ${renderSimilarity(a)}
+      ${renderAwardeeFeedback(a.awardeeFeedback)}
       ${renderList('Kekuatan', a.strengths, 'tag-strong')}
       ${renderList('Kelemahan', a.weaknesses, 'tag-weak')}
       ${renderList('Saran', a.suggestions, 'tag-tip')}
@@ -186,6 +198,104 @@
         <summary style="cursor:pointer; font-weight:600;">Tampilkan isi essay</summary>
         <div class="quote" style="margin-top:8px; white-space:pre-wrap;">${escapeHtml(it.content || '')}</div>
       </details>
+    `;
+  }
+
+  function renderSimilarity(a) {
+    const sim = a.similarity;
+    const aiSim = a.awardeeFeedback?.similarity;
+    if (!sim || !sim.available) return '';
+
+    // Prefer AI similarity score; fall back to TF-IDF score
+    const useAi = aiSim && typeof aiSim.score === 'number';
+    const score = useAi ? Math.round(aiSim.score) : sim.score;
+    const label = useAi ? aiSim.label : (
+      score >= 85 ? 'Tinggi' : score >= 65 ? 'Sedang' : score >= 40 ? 'Rendah' : 'Sangat Rendah'
+    );
+    const note = useAi ? (aiSim.note || '') : '';
+    const bandCls = score >= 85 ? 'sim-high' : score >= 65 ? 'sim-mid' : 'sim-low';
+
+    const matches = Array.isArray(sim.topMatches) ? sim.topMatches : [];
+    const aiPerRef = {};
+    if (aiSim && Array.isArray(aiSim.per_reference)) {
+      aiSim.per_reference.forEach(p => {
+        const i = (p.ref_index || 0) - 1;
+        if (i >= 0) aiPerRef[i] = p;
+      });
+    }
+
+    return `
+      <div class="analysis-block" style="margin-top:14px;">
+        <h4>Kemiripan dengan Essay Lolos LPDP <small class="muted" style="font-weight:400">(${sim.count || matches.length} referensi)</small></h4>
+        <div class="sim-card ${bandCls}">
+          <div class="sim-score">
+            <strong>${score}%</strong>
+            <span>${escapeHtml(label)}</span>
+          </div>
+          <div class="sim-body">
+            <div class="sim-bar"><span style="width:${score}%"></span></div>
+            ${note ? `<p class="sim-note">${escapeHtml(note)}</p>` : ''}
+          </div>
+        </div>
+        ${matches.length ? `
+          <div style="margin-top:12px;">
+            <h5 style="font-size:0.9rem; margin-bottom:8px;">Essay Referensi Paling Mirip</h5>
+            ${matches.map((m, i) => {
+              const ai = aiPerRef[i];
+              const pct = ai ? Math.round(ai.score) : m.percent;
+              const why = ai?.why ? `<p class="muted" style="margin:6px 0 0; font-size:0.85rem;">${escapeHtml(ai.why)}</p>` : '';
+              return `
+                <div class="sim-match">
+                  <div style="flex:1;">
+                    <div style="font-weight:600;">${escapeHtml(m.title || 'Untitled')}</div>
+                    <small class="muted">${m.university ? escapeHtml(m.university) : ''}${m.author ? ' • ' + escapeHtml(m.author) : ''}</small>
+                    ${why}
+                  </div>
+                  <span class="tag ${pct >= 85 ? 'tag-strong' : pct >= 65 ? 'tag-tip' : 'tag-weak'}" style="font-size:0.8rem;">${pct}%</span>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        ` : ''}
+      </div>
+    `;
+  }
+
+  function renderAwardeeFeedback(fb) {
+    if (!fb) return '';
+    const aspects = [
+      { key: 'motivasi',      label: 'Motivasi' },
+      { key: 'kontribusi',    label: 'Kontribusi untuk Indonesia' },
+      { key: 'rencana_studi', label: 'Rencana Studi' },
+    ];
+    const cardFor = (a) => {
+      const f = fb[a.key];
+      if (!f) return '';
+      const cls = f.strength === 'stronger' ? 'fb-stronger'
+                : f.strength === 'weaker'   ? 'fb-weaker'
+                : 'fb-comparable';
+      const icon = f.strength === 'stronger' ? '↑'
+                 : f.strength === 'weaker'   ? '↓'
+                 : '≈';
+      return `
+        <div class="fb-card ${cls}">
+          <div class="fb-head">
+            <h5><span class="fb-icon">${icon}</span> ${a.label}</h5>
+            ${f.qualitative_label ? `<span class="fb-badge">${escapeHtml(f.qualitative_label)}</span>` : ''}
+          </div>
+          ${f.reasoning ? `<p class="fb-reason">${escapeHtml(f.reasoning)}</p>` : ''}
+          ${f.improvement ? `<div class="fb-tip"><strong>💡 Saran:</strong> ${escapeHtml(f.improvement)}</div>` : ''}
+        </div>
+      `;
+    };
+    const hasAnyAspect = aspects.some(a => fb[a.key]);
+    if (!hasAnyAspect && !fb.overall_summary) return '';
+    return `
+      <div class="analysis-block" style="margin-top:14px;">
+        <h4>Feedback Komparatif vs Awardee LPDP</h4>
+        ${fb.overall_summary ? `<p class="fb-summary">${escapeHtml(fb.overall_summary)}</p>` : ''}
+        ${hasAnyAspect ? `<div class="fb-grid">${aspects.map(cardFor).join('')}</div>` : ''}
+      </div>
     `;
   }
   function renderList(title, items, tag) {

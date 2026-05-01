@@ -356,25 +356,13 @@ Saya percaya setiap orang berhak atas air bersih. Dengan ilmu, pengalaman, dan k
     };
   }
 
-  // -------- Render --------
+  // -------- Render: split into score summary (row 1 right) + details (row 2 full-width) --------
   function render(result) {
-    const r = result;
-    const isPro = App.getIsPro ? App.getIsPro() : false;
-    const lockedClass = isPro ? '' : 'pro-locked';
-    const upgradeOverlay = isPro ? '' : `
-      <div class="pro-overlay">
-        <div class="pro-overlay-card">
-          <div class="pro-overlay-icon">🔒</div>
-          <h3 style="margin:0 0 8px">Analisis Mendalam Khusus Pro</h3>
-          <p class="muted" style="margin:0 0 16px; max-width:420px;">
-            Untuk membuka metrik detail (struktur, kejelasan, dampak), daftar essay referensi
-            paling mirip, kekuatan & kelemahan, saran perbaikan konkret, analisis per paragraf,
-            dan feedback komparatif AI vs awardee — upgrade ke Pro.
-          </p>
-          <button class="btn btn-primary" id="upgradeProBtn">🔓 Upgrade ke Pro</button>
-        </div>
-      </div>
-    `;
+    renderScoreSummary(result);
+    renderDetails(result);
+  }
+
+  function renderScoreSummary(r) {
     const html = `
       <div class="score-hero" style="--pct:${r.overall}%">
         <div class="big-score">
@@ -385,6 +373,7 @@ Saya percaya setiap orang berhak atas air bersih. Dengan ilmu, pengalaman, dan k
           <p class="muted" style="margin:0">${r.wordN} kata • ${r.sentences} kalimat • ${r.paragraphs} paragraf</p>
           <p style="margin-top:8px;">${scoreVerdict(r.overall)}</p>
           ${r.context.universityName ? `<p class="muted" style="margin-top:4px; font-size:0.9rem;">Target: ${escapeHtml(r.context.degreeLevel.toUpperCase())} di ${escapeHtml(r.context.universityName)}</p>` : ''}
+          ${r.usageInfo ? `<p class="muted" style="margin-top:4px; font-size:0.8rem;">Kuota harian: <strong>${r.usageInfo.used}/${r.usageInfo.limit}</strong> ${r.usageInfo.isPro ? '(Pro)' : '(Free)'}</p>` : ''}
         </div>
       </div>
 
@@ -397,8 +386,33 @@ Saya percaya setiap orang berhak atas air bersih. Dengan ilmu, pengalaman, dan k
         </div>
       </div>
 
-      ${renderSimilarityCard(r.similarity)}
+      ${renderSimilarityCard(r.similarity, r.awardeeFeedback?.similarity, r.awardeeFeedbackLoading, r.awardeeFeedbackError)}
+    `;
+    el('emptyState').classList.add('hidden');
+    const rc = el('resultContent');
+    rc.innerHTML = html;
+    rc.classList.remove('hidden');
+  }
 
+  function renderDetails(r) {
+    const isPro = App.getIsPro ? App.getIsPro() : false;
+    const lockedClass = isPro ? '' : 'pro-locked';
+    const upgradeOverlay = isPro ? '' : `
+      <div class="pro-overlay">
+        <div class="pro-overlay-card">
+          <div class="pro-overlay-icon">🔒</div>
+          <h3 style="margin:0 0 8px">Penjelasan Mendalam Khusus Pro</h3>
+          <p class="muted" style="margin:0 0 16px; max-width:420px;">
+            Untuk membuka metrik detail (struktur, kejelasan, dampak), daftar essay referensi
+            paling mirip, kekuatan & kelemahan, saran perbaikan konkret, analisis per paragraf,
+            dan feedback komparatif AI vs awardee — upgrade ke Pro.
+          </p>
+          <button class="btn btn-primary" id="upgradeProBtn">🔓 Upgrade ke Pro</button>
+        </div>
+      </div>
+    `;
+
+    const html = `
       <div class="pro-content-wrap ${lockedClass}">
         ${upgradeOverlay}
         <div class="pro-content">
@@ -410,7 +424,7 @@ Saya percaya setiap orang berhak atas air bersih. Dengan ilmu, pengalaman, dan k
         ${metric('Cakupan Aspek', r.coverageAvg)}
       </div>
 
-      ${renderSimilarityMatches(r.similarity)}
+      ${renderSimilarityMatches(r.similarity, r.awardeeFeedback?.similarity)}
 
       ${renderAwardeeFeedback(r.awardeeFeedback, r.awardeeFeedbackError, r.awardeeFeedbackLoading, r.awardeeFeedbackIsPro)}
 
@@ -446,10 +460,11 @@ Saya percaya setiap orang berhak atas air bersih. Dengan ilmu, pengalaman, dan k
         </div>
       </div>
     `;
-    el('emptyState').classList.add('hidden');
-    const rc = el('resultContent');
-    rc.innerHTML = html;
-    rc.classList.remove('hidden');
+    el('detailsEmpty').classList.add('hidden');
+    const dc = el('detailsContent');
+    dc.innerHTML = html;
+    dc.classList.remove('hidden');
+
     const saveBtn = el('saveEssayBtn');
     if (saveBtn) saveBtn.onclick = () => {
       App.saveEssay(textarea.value);
@@ -462,7 +477,7 @@ Saya percaya setiap orang berhak atas air bersih. Dengan ilmu, pengalaman, dan k
     };
   }
 
-  function renderSimilarityCard(sim) {
+  function renderSimilarityCard(sim, aiSim, loading, aiError) {
     if (!sim) return '';
     if (!sim.available) {
       return `
@@ -474,11 +489,47 @@ Saya percaya setiap orang berhak atas air bersih. Dengan ilmu, pengalaman, dan k
         </div>
       `;
     }
-    const s = sim.score;
-    const band = s >= 55 ? { cls: 'sim-very-high', label: 'Sangat Tinggi', note: 'Sangat mirip dengan essay lolos — tapi pastikan tetap orisinil, jangan terlalu meniru frasa.' }
-              : s >= 35 ? { cls: 'sim-high', label: 'Tinggi', note: 'Gaya dan tema essay sangat selaras dengan pola essay yang lolos.' }
-              : s >= 20 ? { cls: 'sim-mid', label: 'Sedang', note: 'Ada overlap tema. Perkuat kosakata dan kerangka khas essay LPDP.' }
-              : { cls: 'sim-low', label: 'Rendah', note: 'Masih jauh dari pola essay yang lolos. Pelajari struktur dan kosakata yang sering muncul.' };
+
+    // Loading state — wait for AI, no instant preview
+    if (loading) {
+      return `
+        <div class="analysis-block">
+          <h4>Kemiripan dengan Essay Lolos LPDP <small class="muted" style="font-weight:400">(${sim.count} referensi)</small> <span class="ai-badge ai-badge-loading">⏳ AI menghitung...</span></h4>
+          <div class="sim-card sim-loading">
+            <div class="sim-skeleton">
+              <div class="sim-skeleton-score"></div>
+              <div class="sim-skeleton-body">
+                <div class="sim-skeleton-bar"></div>
+                <div class="sim-skeleton-line"></div>
+                <div class="sim-skeleton-line short"></div>
+              </div>
+            </div>
+            <p class="muted" style="margin:14px 0 0; font-size:0.85rem; text-align:center;">AI sedang membandingkan essay Anda dengan 11${sim.count}+ essay awardee...</p>
+          </div>
+        </div>
+      `;
+    }
+
+    // AI failed — show error state, no TF-IDF fallback
+    if (aiError || !aiSim || typeof aiSim.score !== 'number') {
+      return `
+        <div class="analysis-block">
+          <h4>Kemiripan dengan Essay Lolos LPDP</h4>
+          <div class="sim-empty">
+            <p class="muted" style="margin:0">Gagal menghitung skor kemiripan AI${aiError ? ': ' + escapeHtml(aiError) : '.'}</p>
+            <p class="muted" style="margin:6px 0 0; font-size:0.85rem;">Coba analisis ulang dalam beberapa saat.</p>
+          </div>
+        </div>
+      `;
+    }
+
+    const s = Math.max(0, Math.min(100, Math.round(aiSim.score)));
+    const band = s >= 95 ? { cls: 'sim-very-high', label: aiSim.label || 'Sangat Tinggi', note: aiSim.note || 'Setara atau lebih baik dari awardee di semua dimensi. Sangat jarang.' }
+              : s >= 85 ? { cls: 'sim-high',      label: aiSim.label || 'Tinggi (Layak Lolos)', note: aiSim.note || 'Pola, kedalaman, dan kekuatan argumen konsisten dengan awardee. Tinggal polish kecil.' }
+              : s >= 65 ? { cls: 'sim-mid',       label: aiSim.label || 'Sedang',        note: aiSim.note || 'Sebagian besar elemen ada, tapi ada kelemahan signifikan di minimal satu aspek.' }
+              : s >= 40 ? { cls: 'sim-low',       label: aiSim.label || 'Rendah',        note: aiSim.note || 'Banyak elemen kunci hilang atau dangkal. Butuh revisi besar di beberapa aspek.' }
+              :          { cls: 'sim-low',       label: aiSim.label || 'Sangat Rendah', note: aiSim.note || 'Jauh dari standar awardee. Hampir semua aspek butuh dirombak.' };
+
     return `
       <div class="analysis-block">
         <h4>Kemiripan dengan Essay Lolos LPDP <small class="muted" style="font-weight:400">(${sim.count} referensi)</small></h4>
@@ -489,31 +540,40 @@ Saya percaya setiap orang berhak atas air bersih. Dengan ilmu, pengalaman, dan k
           </div>
           <div class="sim-body">
             <div class="sim-bar"><span style="width:${s}%"></span></div>
-            <p class="sim-note">${band.note}</p>
-            <div class="sim-meta">
-              <span>Tertinggi: <strong>${sim.maxScore}%</strong></span>
-              <span>Rata-rata top 3: <strong>${sim.avgTop3}%</strong></span>
-            </div>
+            <p class="sim-note">${escapeHtml(band.note)}</p>
           </div>
         </div>
       </div>
     `;
   }
 
-  function renderSimilarityMatches(sim) {
+  function renderSimilarityMatches(sim, aiSim) {
     if (!sim || !sim.available || !sim.topMatches?.length) return '';
+    const aiByIndex = {};
+    if (aiSim && Array.isArray(aiSim.per_reference)) {
+      aiSim.per_reference.forEach((p) => {
+        const idx = (p.ref_index || 0) - 1;
+        if (idx >= 0) aiByIndex[idx] = p;
+      });
+    }
     return `
       <div class="analysis-block">
         <h4>Essay Referensi Paling Mirip</h4>
-        ${sim.topMatches.map(m => `
+        ${sim.topMatches.map((m, i) => {
+          const ai = aiByIndex[i];
+          const pct = ai ? Math.max(0, Math.min(100, Math.round(ai.score))) : m.percent;
+          const why = ai?.why ? `<p class="muted" style="margin:6px 0 0; font-size:0.85rem;">${escapeHtml(ai.why)}</p>` : '';
+          return `
           <div class="sim-match">
-            <div>
+            <div style="flex:1;">
               <div style="font-weight:600;">${escapeHtml(m.title || 'Untitled')}</div>
               <small class="muted">${m.university ? escapeHtml(m.university) : ''}${m.author ? ' • ' + escapeHtml(m.author) : ''}</small>
+              ${why}
             </div>
-            <span class="tag ${m.percent >= 40 ? 'tag-strong' : m.percent >= 20 ? 'tag-tip' : 'tag-weak'}" style="font-size:0.8rem;">${m.percent}%</span>
+            <span class="tag ${pct >= 85 ? 'tag-strong' : pct >= 65 ? 'tag-tip' : 'tag-weak'}" style="font-size:0.8rem;">${pct}%</span>
           </div>
-        `).join('')}
+          `;
+        }).join('')}
       </div>
     `;
   }
@@ -624,10 +684,46 @@ Saya percaya setiap orang berhak atas air bersih. Dengan ilmu, pengalaman, dan k
   }
   function escapeAttr(s) { return escapeHtml(s); }
 
+  function renderLimitReached(usage) {
+    const isPro = !!usage.isPro;
+    const limit = usage.limit || (isPro ? 10 : 3);
+    el('emptyState').classList.add('hidden');
+    const rc = el('resultContent');
+    rc.innerHTML = `
+      <div class="analysis-block" style="border:1px solid #fcd34d; background:linear-gradient(135deg,#fef3c7,#fef2f2); border-radius:14px; padding:24px; text-align:center;">
+        <div style="font-size:2.4rem; margin-bottom:6px;">⏳</div>
+        <h3 style="margin:0 0 8px;">Batas Harian Tercapai</h3>
+        <p class="muted" style="max-width:520px; margin:0 auto 14px;">
+          Maaf, karena kami menggunakan AI model yang mahal untuk meningkatkan akurasi analisis,
+          kami harus membatasi pemakaian harian. Anda sudah memakai <strong>${limit}/${limit}</strong>
+          analisis hari ini${isPro ? ' (akun Pro)' : ' (akun Free)'}.
+        </p>
+        <p class="muted" style="margin:0 0 16px; font-size:0.9rem;">
+          Kuota di-reset otomatis setiap hari (waktu Indonesia / WIB).
+        </p>
+        ${isPro
+          ? '<a href="account.html" class="btn btn-ghost">Lihat Akun Saya</a>'
+          : `<a href="pricing.html" class="btn btn-primary">🔓 Upgrade ke Pro untuk 10 analisis/hari</a>
+             <p class="muted" style="font-size:0.78rem; margin-top:14px;">Akun Free: 3 analisis/hari • Akun Pro: 10 analisis/hari</p>`
+        }
+      </div>
+    `;
+    rc.classList.remove('hidden');
+    window.scrollTo({ top: el('resultPanel').offsetTop - 80, behavior: 'smooth' });
+  }
+
+  let isAnalyzing = false;
   el('analyzeBtn').addEventListener('click', async () => {
+    if (isAnalyzing) return;  // guard against double-click while in flight
+
     const text = textarea.value.trim();
     if (text.split(/\s+/).filter(Boolean).length < 100) {
       alert('Essay terlalu pendek. Minimal 100 kata untuk mulai dianalisis (disarankan 300+).');
+      return;
+    }
+    if (!App.getUser()) {
+      alert('Silakan login terlebih dahulu untuk menggunakan Essay Checker.');
+      window.location.href = 'login.html';
       return;
     }
     const selectedOpt = uniSelect.options[uniSelect.selectedIndex];
@@ -643,23 +739,71 @@ Saya percaya setiap orang berhak atas air bersih. Dengan ilmu, pengalaman, dan k
       if (u) ctx.universityShort = u.short_name;
     }
     const btn = el('analyzeBtn');
-    btn.disabled = true; btn.textContent = 'Menganalisis...';
-    const result = analyze(text, ctx);
-    // Compute similarity asynchronously
-    try {
-      result.similarity = await computeSimilarity(text, ctx);
-    } catch (err) {
-      console.warn('Similarity error:', err);
-      result.similarity = { available: false, count: 0, error: true };
-    }
-    // Render local results first (fast feedback) so the user isn't staring at a frozen button
-    btn.disabled = false; btn.textContent = 'Analisis Essay';
-    render(result);
-    window.scrollTo({ top: el('resultPanel').offsetTop - 80, behavior: 'smooth' });
-    App.saveEssayToDb(text, ctx, result);
+    isAnalyzing = true;
+    btn.disabled = true;
+    btn.textContent = 'Memeriksa kuota harian...';
 
-    // Then fetch the LLM comparative feedback in the background and re-render
-    if (result.similarity?.available && result.similarity.topMatches?.length) {
+    // Always-runs cleanup so the button can never get stuck
+    const resetButton = () => {
+      btn.disabled = false;
+      btn.textContent = 'Analisis Essay';
+      isAnalyzing = false;
+    };
+
+    // Race the RPC against a timeout so the button can never hang forever
+    const withTimeout = (promise, ms, label) =>
+      Promise.race([
+        promise,
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout: ' + label)), ms)),
+      ]);
+
+    let result;
+    try {
+      // Atomic daily-cap check + record (server-side, can't be bypassed via DevTools)
+      let usage;
+      try {
+        usage = await withTimeout(App.checkAndRecordUsage('essay_check'), 15000, 'cek kuota');
+      } catch (err) {
+        console.warn('Usage check failed:', err);
+        alert('Gagal memeriksa kuota: ' + (err.message || err) + '. Coba lagi.');
+        return;
+      }
+      if (!usage.ok) {
+        alert('Gagal memeriksa kuota. Coba lagi.');
+        return;
+      }
+      if (!usage.allowed) {
+        renderLimitReached(usage);
+        return;
+      }
+
+      btn.textContent = 'Menganalisis...';
+      result = analyze(text, ctx);
+      result.usageInfo = usage;
+
+      // Compute similarity asynchronously
+      try {
+        result.similarity = await computeSimilarity(text, ctx);
+      } catch (err) {
+        console.warn('Similarity error:', err);
+        result.similarity = { available: false, count: 0, error: true };
+      }
+
+      // Render local results first
+      render(result);
+      window.scrollTo({ top: el('resultPanel').offsetTop - 80, behavior: 'smooth' });
+    } catch (err) {
+      console.error('Analyze flow error:', err);
+      alert('Terjadi kesalahan: ' + (err.message || err));
+      return;
+    } finally {
+      // Re-enable the button no matter what — analyze is "done" from user's POV
+      // even if AI feedback below is still loading in the background.
+      resetButton();
+    }
+
+    // Background AI feedback (button already re-enabled, user can re-analyze if they want)
+    if (result && result.similarity?.available && result.similarity.topMatches?.length) {
       result.awardeeFeedbackLoading = true;
       render(result);
       try {
@@ -681,6 +825,11 @@ Saya percaya setiap orang berhak atas air bersih. Dengan ilmu, pengalaman, dan k
         result.awardeeFeedbackError = String(err);
       }
       render(result);
+    }
+
+    // Save to DB once everything is complete (so similarity + awardee feedback are persisted)
+    if (result) {
+      App.saveEssayToDb(text, ctx, result);
     }
   });
 

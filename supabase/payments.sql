@@ -1,5 +1,5 @@
 -- ============================================================================
--- LPDP Prep — Payments (Midtrans) + profile pro fields
+-- SIAP Studi — Payments (Midtrans) + profile pro fields
 -- Run this AFTER schema.sql.
 -- ============================================================================
 
@@ -53,3 +53,24 @@ drop trigger if exists payments_touch on public.payments;
 create trigger payments_touch
   before update on public.payments
   for each row execute function public.touch_payments_updated_at();
+
+-- ============================================================================
+-- Promo counter: how many distinct users have already bought Early Bird?
+-- Counts each user once across all their paid 'yearly_promo' payments, so
+-- renewals don't inflate the number. Refunded payments are excluded
+-- (status != 'paid'), so a refund frees the spot back up.
+-- Public read so the pricing page can show "X / 100 terpakai" pre-login.
+-- ============================================================================
+create or replace function public.promo_pro_count()
+returns int
+language sql
+security definer
+stable
+as $$
+  select coalesce(count(distinct user_id), 0)::int
+  from public.payments
+  where plan = 'yearly_promo' and status = 'paid';
+$$;
+
+revoke all on function public.promo_pro_count() from public;
+grant execute on function public.promo_pro_count() to anon, authenticated;

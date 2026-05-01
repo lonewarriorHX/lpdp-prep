@@ -112,7 +112,7 @@
         const fetched = await App.fetchTbsQuestions(cat);
         pool = fetched.map(q => ({ ...q, _cat: q._cat || cat }));
       } catch (e) {
-        console.warn('[LPDP Prep] fetchTbsQuestions failed; falling back to local bank.', e);
+        console.warn('[SIAP Studi] fetchTbsQuestions failed; falling back to local bank.', e);
       }
     }
     if (!pool.length) {
