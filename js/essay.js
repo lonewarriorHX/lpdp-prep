@@ -397,7 +397,7 @@ Saya percaya setiap orang berhak atas air bersih. Dengan ilmu, pengalaman, dan k
         </div>
       </div>
 
-      ${renderSimilarityCard(r.similarity, r.awardeeFeedback?.similarity, r.awardeeFeedbackLoading, r.awardeeFeedbackError)}
+      ${renderSimilarityCard(r.similarity, r.awardeeFeedback?.similarity, r.awardeeFeedbackLoading, r.awardeeFeedbackError, r.wordN)}
     `;
     el('emptyState').classList.add('hidden');
     const rc = el('resultContent');
@@ -488,7 +488,33 @@ Saya percaya setiap orang berhak atas air bersih. Dengan ilmu, pengalaman, dan k
     };
   }
 
-  function renderSimilarityCard(sim, aiSim, loading, aiError) {
+  // Length penalty: ideal 1200 words. Every 100 words off = -5. Capped at -50.
+  // If penalty > 30, prepend a length warning to the note.
+  function applyLengthPenalty(rawScore, wordN, baseNote) {
+    const IDEAL = 1200;
+    const STEP = 100;
+    const PER_STEP = 5;
+    const diff = Math.abs((wordN || 0) - IDEAL);
+    const penalty = Math.min(50, Math.floor(diff / STEP) * PER_STEP);
+    const adjusted = Math.max(0, Math.min(100, Math.round(rawScore - penalty)));
+
+    let note = baseNote || '';
+    if (penalty > 30) {
+      const lengthMsg = (wordN || 0) < IDEAL
+        ? `Essay-mu masih ${IDEAL - (wordN || 0)} kata di bawah panjang ideal (sekitar ${IDEAL} kata). Ini bikin sulit menggali tiap aspek dengan dalam — itu sebabnya skor turun cukup banyak.`
+        : `Essay-mu kelebihan ${(wordN || 0) - IDEAL} kata dari panjang ideal (sekitar ${IDEAL} kata). Awardee biasanya lebih ringkas dan padat — coba pangkas bagian yang tidak esensial.`;
+      note = lengthMsg + (note ? '\n\n' + note : '');
+    } else if (penalty > 0 && note) {
+      // Light hint without dominating the note
+      const hint = (wordN || 0) < IDEAL
+        ? `(Catatan: panjang essay sedikit di bawah ideal ~${IDEAL} kata, jadi skor sedikit dikurangi.)`
+        : `(Catatan: panjang essay sedikit di atas ideal ~${IDEAL} kata, jadi skor sedikit dikurangi.)`;
+      note = note + '\n\n' + hint;
+    }
+    return { score: adjusted, note, penalty };
+  }
+
+  function renderSimilarityCard(sim, aiSim, loading, aiError, wordN) {
     if (!sim) return '';
     if (!sim.available) {
       return `
@@ -534,12 +560,34 @@ Saya percaya setiap orang berhak atas air bersih. Dengan ilmu, pengalaman, dan k
       `;
     }
 
-    const s = Math.max(0, Math.min(100, Math.round(aiSim.score)));
-    const band = s >= 95 ? { cls: 'sim-very-high', label: aiSim.label || 'Sangat Tinggi', note: aiSim.note || 'Setara atau lebih baik dari awardee di semua dimensi. Sangat jarang.' }
-              : s >= 85 ? { cls: 'sim-high',      label: aiSim.label || 'Tinggi (Layak Lolos)', note: aiSim.note || 'Pola, kedalaman, dan kekuatan argumen konsisten dengan awardee. Tinggal polish kecil.' }
-              : s >= 65 ? { cls: 'sim-mid',       label: aiSim.label || 'Sedang',        note: aiSim.note || 'Sebagian besar elemen ada, tapi ada kelemahan signifikan di minimal satu aspek.' }
-              : s >= 40 ? { cls: 'sim-low',       label: aiSim.label || 'Rendah',        note: aiSim.note || 'Banyak elemen kunci hilang atau dangkal. Butuh revisi besar di beberapa aspek.' }
-              :          { cls: 'sim-low',       label: aiSim.label || 'Sangat Rendah', note: aiSim.note || 'Jauh dari standar awardee. Hampir semua aspek butuh dirombak.' };
+    const rawScore = Math.max(0, Math.min(100, Math.round(aiSim.score)));
+
+    // Pick a default note based on raw (pre-penalty) score, friendlier tone
+    const friendlyDefaults = {
+      veryHigh: 'Essay-mu setara atau bahkan lebih kuat dari awardee LPDP di hampir semua sisi. Sangat jarang dapat skor segini — pertahankan!',
+      high:     'Pola tulisan, kedalaman cerita, dan kekuatan argumenmu sudah selevel awardee. Tinggal polish kecil di bagian ini-itu, lalu siap submit.',
+      mid:      'Sebagian besar fondasinya sudah ada, tapi masih ada satu-dua aspek yang terasa lebih dangkal dari awardee. Worth it untuk dipertajam.',
+      low:      'Beberapa elemen penting masih belum cukup terlihat di essay-mu. Awardee biasanya lebih spesifik dan punya cerita yang lebih konkret. Masih banyak ruang untuk diperbaiki.',
+      veryLow:  'Pola essay-mu masih jauh dari awardee LPDP — hampir semua aspek butuh disusun ulang. Jangan kecil hati, ini bagian dari proses; coba pelajari pola awardee dulu sebelum revisi.',
+    };
+    const baseNote = aiSim.note ||
+      (rawScore >= 95 ? friendlyDefaults.veryHigh
+       : rawScore >= 85 ? friendlyDefaults.high
+       : rawScore >= 65 ? friendlyDefaults.mid
+       : rawScore >= 40 ? friendlyDefaults.low
+       : friendlyDefaults.veryLow);
+
+    // Apply length penalty (ideal 1200 words, -5 per 100 words deviation)
+    const adjusted = applyLengthPenalty(rawScore, wordN, baseNote);
+    const s = adjusted.score;
+    const finalNote = adjusted.note;
+
+    // Re-band based on adjusted score
+    const band = s >= 95 ? { cls: 'sim-very-high', label: aiSim.label || 'Sangat Tinggi' }
+              : s >= 85 ? { cls: 'sim-high',      label: aiSim.label || 'Tinggi (Layak Lolos)' }
+              : s >= 65 ? { cls: 'sim-mid',       label: aiSim.label || 'Sedang' }
+              : s >= 40 ? { cls: 'sim-low',       label: aiSim.label || 'Rendah' }
+              :          { cls: 'sim-low',       label: aiSim.label || 'Sangat Rendah' };
 
     return `
       <div class="analysis-block">
@@ -551,7 +599,7 @@ Saya percaya setiap orang berhak atas air bersih. Dengan ilmu, pengalaman, dan k
           </div>
           <div class="sim-body">
             <div class="sim-bar"><span style="width:${s}%"></span></div>
-            <p class="sim-note">${escapeHtml(band.note)}</p>
+            <p class="sim-note" style="white-space:pre-line">${escapeHtml(finalNote)}</p>
           </div>
         </div>
       </div>
