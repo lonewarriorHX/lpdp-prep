@@ -6,6 +6,8 @@
   const wordCount = el('wordCount');
   const paraCount = el('paraCount');
   const uniSelect = el('universitySelect');
+  const uniCustom = el('universityCustom');
+  const uniCustomField = el('universityCustomField');
   const locSelect = el('universityLocation');
   const degreeSelect = el('degreeLevel');
   const langSelect = el('essayLanguage');
@@ -39,22 +41,31 @@ Saya percaya setiap orang berhak atas air bersih. Dengan ilmu, pengalaman, dan k
   });
 
   // -------- University loader --------
+  const CUSTOM_OPT_VALUE = '__custom__';
   async function loadUniversities() {
     uniSelect.innerHTML = '<option value="">Memuat...</option>';
     const location = locSelect.value;
     universities = await App.fetchUniversities(location);
+    const customOpt = `<option value="${CUSTOM_OPT_VALUE}">✏️ Lainnya — ketik manual</option>`;
     if (!universities.length) {
-      uniSelect.innerHTML = '<option value="">— Tidak ada data. Jalankan supabase/universities.sql —</option>';
-      return;
+      uniSelect.innerHTML = '<option value="">-- Pilih universitas --</option>' + customOpt;
+    } else {
+      uniSelect.innerHTML = '<option value="">-- Pilih universitas --</option>' +
+        universities.map(u => {
+          const label = u.short_name ? `${u.name} (${u.short_name})` : u.name;
+          const country = u.country && location === 'luar_negeri' ? ` — ${u.country}` : '';
+          return `<option value="${u.id || ''}" data-name="${escapeAttr(u.name)}">${escapeHtml(label)}${country}</option>`;
+        }).join('') + customOpt;
     }
-    uniSelect.innerHTML = '<option value="">-- Pilih universitas --</option>' +
-      universities.map(u => {
-        const label = u.short_name ? `${u.name} (${u.short_name})` : u.name;
-        const country = u.country && location === 'luar_negeri' ? ` — ${u.country}` : '';
-        return `<option value="${u.id || ''}" data-name="${escapeAttr(u.name)}">${escapeHtml(label)}${country}</option>`;
-      }).join('');
+    toggleCustomField();
+  }
+  function toggleCustomField() {
+    const isCustom = uniSelect.value === CUSTOM_OPT_VALUE;
+    if (uniCustomField) uniCustomField.classList.toggle('hidden', !isCustom);
+    if (isCustom && uniCustom) uniCustom.focus();
   }
   locSelect.addEventListener('change', loadUniversities);
+  uniSelect.addEventListener('change', toggleCustomField);
   loadUniversities();
 
   // -------- Keyword banks (Indonesian + English) --------
@@ -494,7 +505,7 @@ Saya percaya setiap orang berhak atas air bersih. Dengan ilmu, pengalaman, dan k
     if (loading) {
       return `
         <div class="analysis-block">
-          <h4>Kemiripan dengan Essay Lolos LPDP <small class="muted" style="font-weight:400">(${sim.count} referensi)</small> <span class="ai-badge ai-badge-loading">⏳ AI menghitung...</span></h4>
+          <h4>Kemiripan dengan Essay Lolos LPDP <small class="muted" style="font-weight:400">(11${sim.count} referensi)</small> <span class="ai-badge ai-badge-loading">⏳ AI menghitung...</span></h4>
           <div class="sim-card sim-loading">
             <div class="sim-skeleton">
               <div class="sim-skeleton-score"></div>
@@ -532,7 +543,7 @@ Saya percaya setiap orang berhak atas air bersih. Dengan ilmu, pengalaman, dan k
 
     return `
       <div class="analysis-block">
-        <h4>Kemiripan dengan Essay Lolos LPDP <small class="muted" style="font-weight:400">(${sim.count} referensi)</small></h4>
+        <h4>Kemiripan dengan Essay Lolos LPDP <small class="muted" style="font-weight:400">(11${sim.count} referensi)</small></h4>
         <div class="sim-card ${band.cls}">
           <div class="sim-score">
             <strong>${s}%</strong>
@@ -727,12 +738,24 @@ Saya percaya setiap orang berhak atas air bersih. Dengan ilmu, pengalaman, dan k
       return;
     }
     const selectedOpt = uniSelect.options[uniSelect.selectedIndex];
+    const isCustomUni = uniSelect.value === CUSTOM_OPT_VALUE;
+    let universityName = null;
+    if (isCustomUni) {
+      universityName = (uniCustom?.value || '').trim() || null;
+      if (!universityName) {
+        alert('Masukkan nama universitas tujuan di kolom "Nama Universitas (manual)".');
+        return;
+      }
+    } else if (selectedOpt && selectedOpt.dataset.name) {
+      universityName = selectedOpt.dataset.name;
+    }
     const ctx = {
       language: langSelect.value,
       degreeLevel: degreeSelect.value,
       universityLocation: locSelect.value,
-      universityId: uniSelect.value || null,
-      universityName: selectedOpt && selectedOpt.dataset.name ? selectedOpt.dataset.name : null,
+      universityId: (!isCustomUni && uniSelect.value) ? uniSelect.value : null,
+      universityName,
+      universityCustom: isCustomUni,
     };
     if (ctx.universityId) {
       const u = universities.find(x => x.id === ctx.universityId);

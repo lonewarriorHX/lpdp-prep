@@ -53,7 +53,7 @@
 
     <div id="pricingView" class="hidden">
 
-      <div class="pricing-grid pricing-grid-3">
+      <div class="pricing-grid pricing-grid-4">
         <!-- Free plan -->
         <div class="pricing-card">
           <div class="pricing-head">
@@ -79,6 +79,29 @@
             <li class="muted">✗ Daftar essay referensi paling mirip</li>
           </ul>
           <button class="btn btn-ghost btn-block" disabled>Plan Anda Saat Ini</button>
+        </div>
+
+        <!-- Pro Bulanan (Monthly) plan -->
+        <div class="pricing-card" id="monthlyCard">
+          <div class="pricing-head">
+            <h3 style="margin:0">Pro Bulanan <span class="pro-tag">PRO</span></h3>
+            <p class="muted" style="margin:4px 0 0">Coba dulu, fleksibel</p>
+          </div>
+          <div class="pricing-price">
+            <span class="pricing-amount">Rp 29.900</span>
+            <span class="pricing-period">/bulan</span>
+          </div>
+          <ul class="pricing-features">
+            <li>✓ Semua fitur Pro</li>
+            <li>✓ Berlaku 30 hari</li>
+            <li>✓ Bisa berhenti kapan saja</li>
+            <li>✓ Cocok untuk eksplorasi singkat</li>
+            <li class="muted">— Lebih hemat ambil tahunan</li>
+          </ul>
+          <button class="btn btn-primary btn-block" id="monthlyBtn" data-plan="monthly">🔓 Upgrade Bulanan</button>
+          <p class="muted" style="font-size:0.75rem; text-align:center; margin-top:10px;">
+            Pembayaran via Midtrans.
+          </p>
         </div>
 
         <!-- Pro Early Bird (Promo) plan -->
@@ -110,7 +133,7 @@
             <li>✓ Metrik mendalam (struktur, kejelasan, dampak)</li>
             <li>✓ Akses prioritas ke fitur baru</li>
           </ul>
-          <button class="btn btn-primary btn-block" id="upgradeBtn">🔓 Upgrade ke Pro</button>
+          <button class="btn btn-primary btn-block" id="upgradeBtn" data-plan="yearly_promo">🔓 Upgrade Tahunan</button>
           <p class="muted" style="font-size:0.75rem; text-align:center; margin-top:10px;">
             Pembayaran aman via Midtrans. GoPay, OVO, DANA, ShopeePay, QRIS, Transfer Bank, Kartu Kredit.
           </p>

@@ -3,15 +3,25 @@
 (function () {
   const el = (id) => document.getElementById(id);
 
-  // ===== Pricing config (display only — backend amount is in create-payment) =====
-  const PRICES = {
-    earlyBird: 49900,
-    transactionFee: 2500,
+  // ===== Pricing config (mirrors create-payment backend) =====
+  const PLANS = {
+    yearly_promo: {
+      base: 49900,
+      label: 'Pro Early Bird (1 tahun)',
+      shortLabel: 'Tahunan',
+    },
+    monthly: {
+      base: 29900,
+      label: 'Pro Bulanan (30 hari)',
+      shortLabel: 'Bulanan',
+    },
   };
+  const TRANSACTION_FEE = 2500;
   const COUPONS = {
     HANXA: { discount: 10000, label: 'HANXA', desc: 'Diskon Rp 10.000' },
   };
-  let appliedCoupon = null; // { code, discount, label }
+  let appliedCoupon = null;     // { code, discount, label }
+  let currentPlan = 'yearly_promo'; // changes when user picks a plan
 
   function fmtIDR(n) {
     return 'Rp ' + (Number(n) || 0).toLocaleString('id-ID');
@@ -31,10 +41,13 @@
   }
 
   function recalcTotal() {
-    const subtotal = PRICES.earlyBird;
-    const fee = PRICES.transactionFee;
+    const plan = PLANS[currentPlan] || PLANS.yearly_promo;
+    const subtotal = plan.base;
+    const fee = TRANSACTION_FEE;
     const discount = appliedCoupon ? appliedCoupon.discount : 0;
     const total = Math.max(0, subtotal + fee - discount);
+    const subLabelEl = document.querySelector('#checkoutPanel .checkout-row:first-of-type span:first-child');
+    if (subLabelEl) subLabelEl.textContent = plan.label;
     el('coSubtotal').textContent = fmtIDR(subtotal);
     el('coFee').textContent = '+ ' + fmtIDR(fee);
     el('coTotal').textContent = fmtIDR(total);
@@ -45,6 +58,9 @@
     } else {
       el('coDiscountRow').classList.add('hidden');
     }
+    // Update Pay button label
+    const payBtn = el('confirmPayBtn');
+    if (payBtn) payBtn.textContent = `Bayar ${plan.shortLabel} via Midtrans`;
   }
 
   async function boot() {
@@ -114,12 +130,13 @@
     }
   }
 
-  // ===== Step 1: Click Upgrade → show checkout panel =====
-  el('upgradeBtn').addEventListener('click', () => {
+  // ===== Step 1: Click any Upgrade button → show checkout panel =====
+  function openCheckout(plan) {
     if (!App.currentUser) {
       window.location.href = 'login.html';
       return;
     }
+    currentPlan = PLANS[plan] ? plan : 'yearly_promo';
     el('checkoutPanel').classList.remove('hidden');
     el('checkoutPanel').scrollIntoView({ behavior: 'smooth', block: 'center' });
     el('couponInput').value = '';
@@ -129,7 +146,10 @@
     el('couponMsg').style.fontSize = '0.85rem';
     el('couponMsg').style.marginTop = '6px';
     recalcTotal();
-  });
+  }
+  el('upgradeBtn').addEventListener('click', () => openCheckout('yearly_promo'));
+  const monthlyBtn = el('monthlyBtn');
+  if (monthlyBtn) monthlyBtn.addEventListener('click', () => openCheckout('monthly'));
 
   // ===== Step 2: Cancel checkout =====
   el('cancelCheckoutBtn').addEventListener('click', () => {
@@ -194,6 +214,7 @@
         // Body fields are sent for the day backend honors them. Backend
         // currently uses a fixed amount in create-payment/index.ts.
         body: JSON.stringify({
+          plan: currentPlan,
           coupon_code: appliedCoupon?.code ?? null,
         }),
       });

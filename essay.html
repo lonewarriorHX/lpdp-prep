@@ -71,7 +71,12 @@
       <div class="field">
         <label for="universitySelect">Universitas Tujuan</label>
         <select id="universitySelect"><option value="">Memuat daftar universitas...</option></select>
-        <div class="help">Belum ada di daftar? Pilih universitas paling mirip — daftar bisa diperluas di Supabase.</div>
+        <div class="help">Belum ada di daftar? Pilih <strong>"Lainnya — ketik manual"</strong> di bawah daftar.</div>
+      </div>
+      <div class="field hidden" id="universityCustomField">
+        <label for="universityCustom">Nama Universitas (manual)</label>
+        <input type="text" id="universityCustom" placeholder="Contoh: King's College London" autocomplete="off" />
+        <div class="help">Tulis nama lengkap universitas tujuanmu.</div>
       </div>
       <div class="field">
         <label for="essayText">Isi Essay</label>

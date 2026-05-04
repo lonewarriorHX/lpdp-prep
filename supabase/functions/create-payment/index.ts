@@ -15,11 +15,20 @@ import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 // === Pricing config — edit here to change price ============================
-const PLAN_NAME = "yearly_promo";
-const PLAN_BASE_IDR = 1000;     // Early Bird subscription price
-const TRANSACTION_FEE_IDR = 0; // Midtrans handling fee passed to user
-const PLAN_LABEL = "SIAP Studi Pro Early Bird — 1 Tahun";
-const PLAN_DURATION_DAYS = 365;
+const TRANSACTION_FEE_IDR = 2500; // Midtrans handling fee passed to user
+const PLANS: Record<string, { base: number; label: string; durationDays: number }> = {
+  yearly_promo: {
+    base: 49900,
+    label: "SIAP Studi Pro Early Bird — 1 Tahun",
+    durationDays: 365,
+  },
+  monthly: {
+    base: 29900,
+    label: "SIAP Studi Pro Bulanan — 30 Hari",
+    durationDays: 30,
+  },
+};
+const DEFAULT_PLAN = "yearly_promo";
 // Promo coupons. Add more entries as needed.
 const COUPONS: Record<string, { discount: number; label: string }> = {
   HANXA: { discount: 10000, label: "HANXA" },
@@ -77,8 +86,10 @@ serve(async (req) => {
       return json({ ok: false, error: "Anda sudah aktif sebagai Pro." }, 400);
     }
 
-    // Parse optional coupon from body
+    // Parse plan + optional coupon from body
     const body = await req.json().catch(() => ({}));
+    const planKey = (typeof body.plan === "string" && PLANS[body.plan]) ? body.plan : DEFAULT_PLAN;
+    const plan = PLANS[planKey];
     const couponCode = String(body.coupon_code || "").trim().toUpperCase();
     let appliedCoupon: { code: string; discount: number; label: string } | null = null;
     if (couponCode) {
@@ -90,7 +101,7 @@ serve(async (req) => {
     }
 
     // Calculate breakdown
-    const subtotal = PLAN_BASE_IDR;
+    const subtotal = plan.base;
     const fee = TRANSACTION_FEE_IDR;
     const discount = appliedCoupon?.discount ?? 0;
     const total = Math.max(0, subtotal + fee - discount);
@@ -105,7 +116,7 @@ serve(async (req) => {
     const { error: insertErr } = await supa.from("payments").insert({
       user_id: user.id,
       order_id: orderId,
-      plan: PLAN_NAME,
+      plan: planKey,
       amount_idr: total,
       status: "pending",
     });
@@ -117,7 +128,7 @@ serve(async (req) => {
     // Build Snap payload — itemize so the user sees the breakdown in Midtrans
     const customerName = profile?.name || user.user_metadata?.name || user.email?.split("@")[0] || "User";
     const items: Array<{ id: string; price: number; quantity: number; name: string }> = [
-      { id: PLAN_NAME, price: subtotal, quantity: 1, name: PLAN_LABEL },
+      { id: planKey, price: subtotal, quantity: 1, name: plan.label },
       { id: "transaction_fee", price: fee, quantity: 1, name: "Biaya Transaksi" },
     ];
     if (appliedCoupon) {
@@ -176,9 +187,9 @@ serve(async (req) => {
       snap_token: data.token,
       redirect_url: data.redirect_url,
       order_id: orderId,
-      plan: PLAN_NAME,
+      plan: planKey,
       amount_idr: total,
-      duration_days: PLAN_DURATION_DAYS,
+      duration_days: plan.durationDays,
       breakdown: { subtotal, fee, discount, total },
       applied_coupon: appliedCoupon,
     });
