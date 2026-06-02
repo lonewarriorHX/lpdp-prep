@@ -6,12 +6,12 @@
   // ===== Pricing config (mirrors create-payment backend) =====
   const PLANS = {
     yearly_promo: {
-      base: 49900,
+      base: 69900,
       label: 'Pro Early Bird (1 tahun)',
       shortLabel: 'Tahunan',
     },
     monthly: {
-      base: 29900,
+      base: 39900,
       label: 'Pro Bulanan (30 hari)',
       shortLabel: 'Bulanan',
     },

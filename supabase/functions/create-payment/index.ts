@@ -18,12 +18,12 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 const TRANSACTION_FEE_IDR = 2500; // Midtrans handling fee passed to user
 const PLANS: Record<string, { base: number; label: string; durationDays: number }> = {
   yearly_promo: {
-    base: 49900,
+    base: 69900,
     label: "SIAP Studi Pro Early Bird — 1 Tahun",
     durationDays: 365,
   },
   monthly: {
-    base: 29900,
+    base: 39900,
     label: "SIAP Studi Pro Bulanan — 30 Hari",
     durationDays: 30,
   },
