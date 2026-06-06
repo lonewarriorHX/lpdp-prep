@@ -79,6 +79,7 @@
   showStats();
 
   el('startBtn').addEventListener('click', async () => {
+    if (!App.requireLogin('Silakan login terlebih dahulu untuk memulai latihan TBS.')) return;
     state.count = parseInt(el('qCount').value, 10);
     state.duration = parseInt(el('qTime').value, 10);
     // Free-tier hard cap (defense in depth — DOM gating is bypassable).

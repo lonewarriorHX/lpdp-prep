@@ -36,6 +36,20 @@
   const params = new URLSearchParams(window.location.search);
   if (params.get('mode') === 'signup') switchTo('signup');
 
+  // After successful auth, send user back where they came from (if safe).
+  function safeNext() {
+    const raw = params.get('next');
+    if (!raw) return 'index.html';
+    try {
+      const decoded = decodeURIComponent(raw);
+      // Only allow same-origin relative paths (no http://evil.com redirects)
+      if (decoded.startsWith('/') || /^[a-z0-9_-]+\.html(\?|#|$)/i.test(decoded)) {
+        return decoded.replace(/^\//, '');
+      }
+    } catch {}
+    return 'index.html';
+  }
+
   function setLoading(btn, loading, labelDefault) {
     btn.disabled = loading;
     btn.textContent = loading ? 'Memproses...' : labelDefault;
@@ -51,7 +65,7 @@
     setLoading(btn, false, 'Masuk');
     if (!res.ok) return showAlert(res.error || 'Gagal masuk.', 'error');
     showAlert('Berhasil masuk. Mengalihkan...', 'success');
-    setTimeout(() => window.location.href = 'index.html', 700);
+    setTimeout(() => window.location.href = safeNext(), 700);
   });
 
   signupForm.addEventListener('submit', async (e) => {
@@ -72,7 +86,7 @@
       return;
     }
     showAlert('Akun dibuat. Mengalihkan...', 'success');
-    setTimeout(() => window.location.href = 'index.html', 700);
+    setTimeout(() => window.location.href = safeNext(), 700);
   });
 
   // Show a hint if Supabase isn't configured yet

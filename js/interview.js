@@ -266,14 +266,16 @@
   }
 
   el('startInterviewBtn').addEventListener('click', async () => {
+    // Save essay first so it's restored after a login bounce
     const essay = essayInput.value.trim();
+    if (essay) App.saveEssay(essay);
+    if (!App.requireLogin('Silakan login terlebih dahulu untuk memulai simulasi wawancara.')) return;
     const words = essay ? essay.split(/\s+/).length : 0;
     if (words < 100) {
       alert('Essay terlalu pendek. Minimal 100 kata untuk membuat pertanyaan yang relevan.');
       return;
     }
     state.essay = essay;
-    App.saveEssay(essay);
     const n = parseInt(el('interviewLength').value, 10);
     state.lang = el('interviewLang').value || 'id-ID';
     const shortLang = state.lang.startsWith('en') ? 'en' : 'id';

@@ -113,6 +113,21 @@
     getAlumniStatus() { return App.alumniStatus; },
     isAuthEnabled() { return !!window.sb; },
 
+    // Guard a user-only action. If logged in → returns true.
+    // If not → optionally alerts a message, then sends user to login with
+    // ?next=<current_page> so they land back here after authenticating.
+    requireLogin(message) {
+      if (App.currentUser) return true;
+      if (message) {
+        try { alert(message); } catch {}
+      }
+      const next = encodeURIComponent(
+        window.location.pathname + window.location.search,
+      );
+      window.location.href = 'login.html?next=' + next;
+      return false;
+    },
+
     async signup(name, email, password) {
       if (window.sb) {
         const { data, error } = await window.sb.auth.signUp({
