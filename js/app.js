@@ -8,6 +8,7 @@
     currentUser: null, // { id, name, email } — populated after initAuth or local login
     isPro: false,      // populated from profiles.is_pro after auth
     isAlumni: false,   // populated from profiles.is_alumni
+    isAdmin: false,    // populated from profiles.is_admin (super-admin)
     alumniStatus: 'none',
     alumniPromoCode: null,
     alumniUniversity: null,
@@ -42,6 +43,7 @@
     async _refreshProStatus() {
       App.isPro = false;
       App.isAlumni = false;
+      App.isAdmin = false;
       App.alumniStatus = 'none';
       App.alumniPromoCode = null;
       App.alumniUniversity = null;
@@ -51,7 +53,7 @@
       try {
         const { data } = await window.sb
           .from('profiles')
-          .select('is_pro, pro_expires_at, is_alumni, alumni_status, alumni_promo_code, alumni_university, alumni_year, alumni_notes')
+          .select('is_pro, pro_expires_at, is_alumni, is_admin, alumni_status, alumni_promo_code, alumni_university, alumni_year, alumni_notes')
           .eq('id', App.currentUser.id)
           .maybeSingle();
         const flagged = !!data?.is_pro;
@@ -59,6 +61,7 @@
                            new Date(data.pro_expires_at) > new Date();
         App.isPro = flagged && notExpired;
         App.isAlumni = !!data?.is_alumni;
+        App.isAdmin = !!data?.is_admin;
         App.alumniStatus = data?.alumni_status || 'none';
         App.alumniPromoCode = data?.alumni_promo_code || null;
         App.alumniUniversity = data?.alumni_university || null;
@@ -96,6 +99,7 @@
         App.currentUser = null;
         App.isPro = false;
         App.isAlumni = false;
+        App.isAdmin = false;
         App.alumniStatus = 'none';
         return;
       }
@@ -110,6 +114,7 @@
     getUser() { return App.currentUser; },
     getIsPro() { return App.isPro; },
     getIsAlumni() { return App.isAlumni; },
+    getIsAdmin() { return App.isAdmin; },
     getAlumniStatus() { return App.alumniStatus; },
     isAuthEnabled() { return !!window.sb; },
 
@@ -577,6 +582,58 @@
       });
       if (error) console.warn('[SIAP Studi] saveInterviewSessionToDb error:', error);
       return { ok: !error };
+    },
+
+    // ---------------- AI PROVIDERS (admin only) ----------------
+    async fetchAiProviders() {
+      if (!window.sb || !App.currentUser || !App.isAdmin) return [];
+      const { data, error } = await window.sb
+        .from('ai_providers')
+        .select('id, name, provider_type, api_base_url, api_key, model, is_active, priority, max_tokens, temperature, extra_headers, created_at, updated_at')
+        .order('priority', { ascending: true });
+      if (error) { console.warn('[SIAP Studi] fetchAiProviders error:', error); return []; }
+      return data || [];
+    },
+
+    async saveAiProvider(provider) {
+      if (!window.sb || !App.currentUser || !App.isAdmin) {
+        return { ok: false, error: { message: 'Tidak punya akses admin.' } };
+      }
+      const row = {
+        name: provider.name,
+        provider_type: provider.providerType,
+        api_base_url: provider.apiBaseUrl,
+        api_key: provider.apiKey,
+        model: provider.model,
+        is_active: provider.isActive !== false,
+        priority: provider.priority ?? 0,
+        max_tokens: provider.maxTokens ?? 2500,
+        temperature: provider.temperature ?? 0.3,
+        extra_headers: provider.extraHeaders ?? {},
+      };
+      if (provider.id) {
+        // Update — only include api_key if a new one was provided
+        const updateRow = { ...row };
+        if (!provider.apiKey) delete updateRow.api_key;
+        const { error } = await window.sb.from('ai_providers').update(updateRow).eq('id', provider.id);
+        if (error) return { ok: false, error };
+      } else {
+        const { error } = await window.sb.from('ai_providers').insert(row);
+        if (error) return { ok: false, error };
+      }
+      return { ok: true };
+    },
+
+    async deleteAiProvider(id) {
+      if (!window.sb || !App.currentUser || !App.isAdmin) return { ok: false };
+      const { error } = await window.sb.from('ai_providers').delete().eq('id', id);
+      return { ok: !error, error };
+    },
+
+    async toggleAiProvider(id, isActive) {
+      if (!window.sb || !App.currentUser || !App.isAdmin) return { ok: false };
+      const { error } = await window.sb.from('ai_providers').update({ is_active: isActive }).eq('id', id);
+      return { ok: !error, error };
     },
   };
 

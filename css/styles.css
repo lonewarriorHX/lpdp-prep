@@ -525,6 +525,7 @@ textarea { resize: vertical; min-height: 260px; line-height: 1.6; }
 .alert { padding: 10px 14px; border-radius: 8px; font-size: 0.9rem; margin-bottom: 12px; }
 .alert-error { background: var(--red-50); color: var(--red-500); }
 .alert-success { background: #ecfdf5; color: var(--green-600); }
+.alert-warning { background: #fffbeb; color: #92400e; }
 
 /* Similarity section */
 .sim-card {

@@ -203,13 +203,12 @@
       const jwt = session?.access_token;
       if (!jwt) throw new Error('Sesi tidak valid. Coba login ulang.');
 
-      const url = `${window.SUPABASE_CONFIG.url}/functions/v1/create-payment`;
+      const url = `${window.SUPABASE_CONFIG.url}/api/fn/create-payment`;
       const res = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${jwt}`,
-          'apikey': window.SUPABASE_CONFIG.anonKey,
         },
         // Body fields are sent for the day backend honors them. Backend
         // currently uses a fixed amount in create-payment/index.ts.

@@ -96,6 +96,7 @@
       <div class="admin-tabs">
         <button class="admin-tab active" data-tab="essays" type="button">Essay Referensi</button>
         <button class="admin-tab" data-tab="questions" type="button">Pertanyaan Referensi</button>
+        <button class="admin-tab hidden" data-tab="ai-settings" type="button" id="aiSettingsTab">AI Settings</button>
       </div>
 
       <div class="admin-tab-panel" data-panel="essays">
@@ -233,6 +234,82 @@
           </div>
         </div>
       </div><!-- /questions panel -->
+
+      <div class="admin-tab-panel hidden" data-panel="ai-settings">
+        <div class="tool-grid">
+          <div class="panel">
+            <h3>Tambah / Edit AI Provider</h3>
+            <p class="muted">Konfigurasi koneksi ke API AI. Support format <strong>OpenAI-compatible</strong> (OpenAI, OpenRouter, Groq, Together, dll.) dan <strong>Anthropic</strong> (Claude).</p>
+
+            <input type="hidden" id="aiEditId" value="" />
+
+            <div class="field">
+              <label for="aiName">Nama Provider</label>
+              <input type="text" id="aiName" placeholder="Contoh: OpenAI GPT-4o, Claude Sonnet, OpenRouter" />
+            </div>
+
+            <div class="form-row">
+              <div class="field">
+                <label for="aiType">Tipe API</label>
+                <select id="aiType">
+                  <option value="openai_compatible">OpenAI-Compatible</option>
+                  <option value="anthropic">Anthropic</option>
+                  <option value="cloudflare_ai">Cloudflare AI (Universal)</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="aiPriority">Prioritas (0 = tertinggi)</label>
+                <input type="text" id="aiPriority" placeholder="0" />
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="aiBaseUrl">Base URL</label>
+              <input type="text" id="aiBaseUrl" placeholder="" />
+              <div class="help" id="aiBaseUrlHint">Contoh: https://api.openai.com/v1</div>
+            </div>
+
+            <div class="field">
+              <label for="aiApiKey">API Key</label>
+              <input type="text" id="aiApiKey" placeholder="sk-..." />
+              <div class="help" id="aiKeyHint">Saat edit, kosongkan jika tidak ingin mengganti key yang ada.</div>
+            </div>
+
+            <div class="field">
+              <label for="aiModel">Model</label>
+              <input type="text" id="aiModel" placeholder="" />
+              <div class="help" id="aiModelHint">Contoh: gpt-4o, claude-sonnet-4-20250514</div>
+            </div>
+
+            <div class="form-row">
+              <div class="field">
+                <label for="aiMaxTokens">Max Tokens</label>
+                <input type="text" id="aiMaxTokens" placeholder="2500" />
+              </div>
+              <div class="field">
+                <label for="aiTemperature">Temperature</label>
+                <input type="text" id="aiTemperature" placeholder="0.30" />
+              </div>
+            </div>
+
+            <div id="aiAlert"></div>
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+              <button class="btn btn-primary" id="saveAiBtn" style="flex:1;">Simpan Provider</button>
+              <button class="btn btn-secondary" id="tryAiBtn">Try</button>
+              <button class="btn btn-ghost hidden" id="cancelAiEditBtn">Batal Edit</button>
+            </div>
+            <div id="aiTryResult" class="hidden" style="margin-top:12px;"></div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-header">
+              <h3>Daftar AI Providers <span class="muted" id="aiCount" style="font-weight:400"></span></h3>
+            </div>
+            <p class="muted" style="font-size:0.85rem; margin-bottom:12px;">Provider diurutkan berdasarkan prioritas. Edge Functions akan mencoba dari prioritas tertinggi (0) ke terendah.</p>
+            <div id="aiList"></div>
+          </div>
+        </div>
+      </div><!-- /ai-settings panel -->
 
     </div>
 

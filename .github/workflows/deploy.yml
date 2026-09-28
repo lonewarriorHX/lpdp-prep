@@ -1,0 +1,48 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          script: |
+            set -e
+            DEPLOY_DIR=/opt/siapstudi
+            REPO=https://github.com/lonewarriorHX/lpdp-prep.git
+
+            # First-time: clone. Subsequent: pull.
+            if [ ! -d "$DEPLOY_DIR/.git/refs" ]; then
+              rm -rf "$DEPLOY_DIR"
+              git clone --depth 1 -b main "$REPO" "$DEPLOY_DIR"
+            else
+              cd "$DEPLOY_DIR"
+              git fetch origin main
+              git reset --hard origin/main
+            fi
+
+            cd "$DEPLOY_DIR"
+
+            # Rebuild and restart (postgres data preserved via Docker volume)
+            docker compose up -d --build
+
+            # Sync nginx config to main reverse proxy
+            cp nginx/siapstudi.conf /root/master/nginx/conf.d/siapstudi.conf
+            docker exec nginx nginx -t && docker exec nginx nginx -s reload
+
+            # Cleanup old images
+            docker image prune -f
+
+            echo "Deploy complete: $(date)"

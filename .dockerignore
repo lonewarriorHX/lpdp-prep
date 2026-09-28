@@ -1,0 +1,14 @@
+.git
+.github
+supabase
+node_modules
+api
+db
+nginx
+*.md
+.env*
+vercel.json
+docker-compose.yml
+Dockerfile
+.dockerignore
+.gitignore
